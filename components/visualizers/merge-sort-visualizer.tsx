@@ -10,25 +10,31 @@ interface MergeSortVisualizerProps {
   onStepChange: (step: number) => void
 }
 
+interface Step {
+  array: number[]
+  leftIndices: number[]
+  rightIndices: number[]
+  mergedIndices: number[]
+  description: string
+}
+
 export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSortVisualizerProps) {
   const [array, setArray] = useState([64, 34, 25, 12, 22, 11, 90, 5])
-  const [leftArray, setLeftArray] = useState<number[]>([])
-  const [rightArray, setRightArray] = useState<number[]>([])
-  const [merging, setMerging] = useState<number[]>([])
-  const [sorted, setSorted] = useState<number[]>([])
+  const [steps, setSteps] = useState<Step[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
   const [customInput, setCustomInput] = useState("")
-  const [currentLevel, setCurrentLevel] = useState(0)
+  const [leftIndices, setLeftIndices] = useState<number[]>([])
+  const [rightIndices, setRightIndices] = useState<number[]>([])
+  const [mergedIndices, setMergedIndices] = useState<number[]>([])
 
   const resetVisualization = useCallback(() => {
-    setLeftArray([])
-    setRightArray([])
-    setMerging([])
-    setSorted([])
+    setSteps([])
     setCurrentStep(0)
     setIsComplete(false)
-    setCurrentLevel(0)
+    setLeftIndices([])
+    setRightIndices([])
+    setMergedIndices([])
     onStepChange(0)
   }, [onStepChange])
 
@@ -53,51 +59,91 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
     }
   }
 
+  const startMergeSort = () => {
+    const newSteps = mergeSortWithSteps([...array])
+    setSteps(newSteps)
+    setCurrentStep(0)
+    setIsComplete(false)
+  }
+
   useEffect(() => {
-    if (!isPlaying || isComplete) return
-
-    const mergeSortStep = () => {
-      const n = array.length
-      const maxSteps = n * Math.log2(n)
-
-      if (currentStep >= maxSteps) {
+    if (!isPlaying || currentStep >= steps.length || steps.length === 0) {
+      if (currentStep >= steps.length && steps.length > 0) {
         setIsComplete(true)
-        setSorted(Array.from({ length: n }, (_, i) => i))
-        setMerging([])
-        setLeftArray([])
-        setRightArray([])
-        return
       }
-
-      // Simulate divide and merge process
-      const mid = Math.floor(array.length / 2)
-      setLeftArray(array.slice(0, mid))
-      setRightArray(array.slice(mid))
-
-      // Simulate merging
-      const mergingIndices = Array.from({ length: Math.min(4, array.length) }, (_, i) => i)
-      setMerging(mergingIndices)
-
-      // Simulate partial sorting
-      if (currentStep > maxSteps / 2) {
-        const sortedIndices = Array.from({ length: Math.floor(currentStep / 2) }, (_, i) => i)
-        setSorted(sortedIndices)
-      }
-
-      setCurrentStep((prev) => prev + 1)
-      setCurrentLevel(Math.floor(currentStep / 4))
-      onStepChange(currentStep + 1)
+      return
     }
 
-    const timer = setTimeout(mergeSortStep, 1100 - speed)
+    const timer = setTimeout(() => {
+      const step = steps[currentStep]
+      setArray(step.array)
+      setLeftIndices(step.leftIndices)
+      setRightIndices(step.rightIndices)
+      setMergedIndices(step.mergedIndices)
+      setCurrentStep((prev) => prev + 1)
+      onStepChange(currentStep + 1)
+    }, 1100 - speed)
+
     return () => clearTimeout(timer)
-  }, [isPlaying, currentStep, array, speed, isComplete, onStepChange])
+  }, [currentStep, isPlaying, steps, speed, onStepChange])
+
+  const mergeSortWithSteps = (arr: number[]): Step[] => {
+    const steps: Step[] = []
+    const originalArray = [...arr]
+
+    function mergeSortHelper(array: number[], startIdx: number, level: number): number[] {
+      if (array.length <= 1) return array
+
+      const mid = Math.floor(array.length / 2)
+      const left = mergeSortHelper(array.slice(0, mid), startIdx, level + 1)
+      const right = mergeSortHelper(array.slice(mid), startIdx + mid, level + 1)
+
+      const merged: number[] = []
+      let i = 0,
+        j = 0
+
+      // Create step for merging process
+      const leftIndices = Array.from({ length: left.length }, (_, idx) => startIdx + idx)
+      const rightIndices = Array.from({ length: right.length }, (_, idx) => startIdx + left.length + idx)
+
+      while (i < left.length && j < right.length) {
+        if (left[i] <= right[j]) {
+          merged.push(left[i++])
+        } else {
+          merged.push(right[j++])
+        }
+      }
+
+      while (i < left.length) merged.push(left[i++])
+      while (j < right.length) merged.push(right[j++])
+
+      // Update the array with merged result
+      const updatedArray = [...originalArray]
+      for (let k = 0; k < merged.length; k++) {
+        updatedArray[startIdx + k] = merged[k]
+      }
+
+      const mergedIndices = Array.from({ length: merged.length }, (_, idx) => startIdx + idx)
+
+      steps.push({
+        array: [...updatedArray],
+        leftIndices,
+        rightIndices,
+        mergedIndices,
+        description: `Merging subarrays of size ${left.length} and ${right.length}`,
+      })
+
+      return merged
+    }
+
+    mergeSortHelper(arr, 0, 0)
+    return steps
+  }
 
   const getBarColor = (index: number) => {
-    if (sorted.includes(index)) return "bg-green-500"
-    if (merging.includes(index)) return "bg-yellow-500"
-    if (leftArray.length > 0 && index < leftArray.length) return "bg-blue-500"
-    if (rightArray.length > 0 && index >= array.length - rightArray.length) return "bg-red-500"
+    if (mergedIndices.includes(index)) return "bg-green-500"
+    if (leftIndices.includes(index)) return "bg-blue-500"
+    if (rightIndices.includes(index)) return "bg-red-500"
     return "bg-gray-400"
   }
 
@@ -110,6 +156,9 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
         <div className="flex flex-wrap gap-2">
           <Button onClick={generateRandomArray} variant="outline" size="sm">
             Generate Random Array
+          </Button>
+          <Button onClick={startMergeSort} variant="outline" size="sm">
+            Start Merge Sort
           </Button>
           <Button onClick={resetVisualization} variant="outline" size="sm">
             Reset
@@ -129,58 +178,24 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
       </div>
 
       {/* Visualization */}
-      <div className="space-y-6">
-        {/* Main Array */}
-        <div className="flex items-end justify-center space-x-2 h-64">
-          {array.map((value, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div
-                className={`w-12 transition-all duration-300 ${getBarColor(index)} rounded-t`}
-                style={{ height: `${(value / maxValue) * 200}px` }}
-              />
-              <div className="text-sm font-semibold mt-2 text-gray-700">{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Sub-arrays */}
-        {(leftArray.length > 0 || rightArray.length > 0) && (
-          <div className="grid grid-cols-2 gap-8">
-            {/* Left Array */}
-            <div className="text-center">
-              <h4 className="font-semibold mb-2 text-blue-600">Left Array</h4>
-              <div className="flex justify-center space-x-1">
-                {leftArray.map((value, index) => (
-                  <div
-                    key={index}
-                    className="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center text-sm"
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Array */}
-            <div className="text-center">
-              <h4 className="font-semibold mb-2 text-red-600">Right Array</h4>
-              <div className="flex justify-center space-x-1">
-                {rightArray.map((value, index) => (
-                  <div
-                    key={index}
-                    className="w-8 h-8 bg-red-500 text-white rounded flex items-center justify-center text-sm"
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-            </div>
+      <div className="flex items-end justify-center space-x-2 h-64 mb-4">
+        {array.map((value, index) => (
+          <div key={index} className="flex flex-col items-center">
+            <div
+              className={`w-12 transition-all duration-300 ${getBarColor(index)} rounded-t`}
+              style={{ height: `${(value / maxValue) * 200}px` }}
+            />
+            <div className="text-sm font-semibold mt-2 text-gray-700">{value}</div>
           </div>
-        )}
+        ))}
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center space-x-6 text-sm mt-6">
+      <div className="flex justify-center space-x-6 text-sm">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-gray-400 rounded"></div>
+          <span>Unsorted</span>
+        </div>
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
           <span>Left Subarray</span>
@@ -190,12 +205,8 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
           <span>Right Subarray</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-          <span>Merging</span>
-        </div>
-        <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span>Sorted</span>
+          <span>Merged</span>
         </div>
       </div>
 
@@ -203,9 +214,30 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
       <div className="text-center mt-4">
         {isComplete ? (
           <p className="text-green-600 font-semibold">Merge Sort Complete! 🎉</p>
+        ) : steps.length > 0 && currentStep < steps.length ? (
+          <p className="text-gray-600">{steps[currentStep]?.description || "Processing merge sort..."}</p>
         ) : (
-          <p className="text-gray-600">Level {currentLevel} | Dividing and merging subarrays</p>
+          <p className="text-gray-600">Click "Start Merge Sort" to begin the visualization</p>
         )}
+      </div>
+
+      {/* Algorithm Info */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <h4 className="font-semibold text-blue-800 mb-1">Divide Phase</h4>
+          <p className="text-blue-600">Split array into smaller subarrays</p>
+          <p className="text-xs text-blue-500 mt-1">Recursively divide until size 1</p>
+        </div>
+        <div className="bg-red-50 p-3 rounded-lg">
+          <h4 className="font-semibold text-red-800 mb-1">Conquer Phase</h4>
+          <p className="text-red-600">Merge subarrays in sorted order</p>
+          <p className="text-xs text-red-500 mt-1">Compare and merge elements</p>
+        </div>
+        <div className="bg-green-50 p-3 rounded-lg">
+          <h4 className="font-semibold text-green-800 mb-1">Stable Sort</h4>
+          <p className="text-green-600">Maintains relative order of equal elements</p>
+          <p className="text-xs text-green-500 mt-1">Guaranteed O(n log n) performance</p>
+        </div>
       </div>
     </div>
   )

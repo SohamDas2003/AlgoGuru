@@ -119,6 +119,9 @@ export default function HomePage() {
               <Link href="#algorithms" className="text-gray-600 hover:text-gray-900">
                 Algorithms
               </Link>
+              <Link href="/practice" className="text-gray-600 hover:text-gray-900">
+                Practice
+              </Link>
               <Link href="#features" className="text-gray-600 hover:text-gray-900">
                 Features
               </Link>
