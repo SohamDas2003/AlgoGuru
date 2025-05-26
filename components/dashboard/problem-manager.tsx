@@ -471,6 +471,7 @@ export function ProblemManager() {
                                 newTestCases[index].isHidden = e.target.checked
                                 setFormData({ ...formData, testCases: newTestCases })
                               }}
+                              className="rounded"
                             />
                             <Label htmlFor={`hidden-${index}`}>Hidden test case</Label>
                           </div>
