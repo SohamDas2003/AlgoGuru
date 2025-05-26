@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, TrendingUp, TrendingDown, Minus, Eye, Award } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface StudentStats {
   userId: string
@@ -157,20 +156,18 @@ export function StudentProgress() {
                   className="pl-10 w-64"
                 />
               </div>
-              <Select
-                value={sortBy}
-                onValueChange={(value: "name" | "solved" | "accuracy" | "streak") => setSortBy(value)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="solved">Sort by Problems Solved</SelectItem>
-                  <SelectItem value="accuracy">Sort by Accuracy</SelectItem>
-                  <SelectItem value="streak">Sort by Streak</SelectItem>
-                  <SelectItem value="name">Sort by Name</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "name" | "solved" | "accuracy" | "streak")}
+                  className="px-3 py-2 border rounded-md text-sm bg-white"
+                >
+                  <option value="solved">Sort by Problems Solved</option>
+                  <option value="accuracy">Sort by Accuracy</option>
+                  <option value="streak">Sort by Streak</option>
+                  <option value="name">Sort by Name</option>
+                </select>
+              </div>
             </div>
           </div>
         </CardHeader>
