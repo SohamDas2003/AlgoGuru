@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,7 +30,7 @@ export function StudentProgress() {
   const [filteredStudents, setFilteredStudents] = useState<StudentStats[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<"name" | "solved" | "accuracy" | "streak">("solved")
+  const [sortBy, setSortBy] = useState("solved")
 
   useEffect(() => {
     loadStudentData()
@@ -63,7 +65,6 @@ export function StudentProgress() {
 
   const loadStudentData = async () => {
     try {
-      // Mock student data - in a real app, this would come from the database
       const mockStudents: StudentStats[] = [
         {
           userId: "2",
@@ -137,6 +138,10 @@ export function StudentProgress() {
     return "text-gray-600"
   }
 
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(event.target.value)
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -159,7 +164,7 @@ export function StudentProgress() {
               <div className="relative">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "name" | "solved" | "accuracy" | "streak")}
+                  onChange={handleSortChange}
                   className="px-3 py-2 border rounded-md text-sm bg-white"
                 >
                   <option value="solved">Sort by Problems Solved</option>
@@ -209,7 +214,6 @@ export function StudentProgress() {
                     </div>
 
                     <div className="flex items-center space-x-8">
-                      {/* Problems Solved */}
                       <div className="text-center">
                         <div className="text-2xl font-bold text-green-600">{student.solvedProblems}</div>
                         <div className="text-xs text-gray-600">Solved</div>
@@ -218,7 +222,6 @@ export function StudentProgress() {
                         </div>
                       </div>
 
-                      {/* Accuracy */}
                       <div className="text-center">
                         <div className="flex items-center justify-center space-x-1">
                           <span className="text-2xl font-bold">{getAccuracyPercentage(student)}%</span>
@@ -230,14 +233,12 @@ export function StudentProgress() {
                         </div>
                       </div>
 
-                      {/* Streak */}
                       <div className="text-center">
                         <div className={`text-2xl font-bold ${getStreakColor(student.streak)}`}>{student.streak}</div>
                         <div className="text-xs text-gray-600">Day Streak</div>
                         {student.streak >= 7 && <Award className="w-4 h-4 text-yellow-500 mx-auto mt-1" />}
                       </div>
 
-                      {/* Actions */}
                       <div className="flex items-center space-x-2">
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4 mr-2" />
@@ -247,7 +248,6 @@ export function StudentProgress() {
                     </div>
                   </div>
 
-                  {/* Progress Details */}
                   <div className="mt-4 pt-4 border-t">
                     <div className="grid grid-cols-4 gap-4 text-sm">
                       <div>
@@ -277,7 +277,6 @@ export function StudentProgress() {
         </CardContent>
       </Card>
 
-      {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">

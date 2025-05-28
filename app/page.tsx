@@ -84,13 +84,13 @@ export default function HomePage() {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
       case "Medium":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
       case "Hard":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
     }
   }
 
@@ -102,38 +102,7 @@ export default function HomePage() {
     .filter((category) => category.algorithms.length > 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Code className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AlgoGuru
-              </h1>
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="#algorithms" className="text-gray-600 hover:text-gray-900">
-                Algorithms
-              </Link>
-              <Link href="/practice" className="text-gray-600 hover:text-gray-900">
-                Practice
-              </Link>
-              <Link href="#features" className="text-gray-600 hover:text-gray-900">
-                Features
-              </Link>
-              <Link href="#about" className="text-gray-600 hover:text-gray-900">
-                About
-              </Link>
-              <Button>Get Started</Button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
@@ -141,19 +110,23 @@ export default function HomePage() {
             <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
               Master Data Structures & Algorithms
             </h2>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
               Interactive visualizations, step-by-step explanations, and hands-on practice to help you understand and
               master DSA concepts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <Play className="w-5 h-5 mr-2" />
                 Start Learning
               </Button>
-              <Button size="lg" variant="outline">
+              <Button
+                size="lg"
+                variant="outline"
+                className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
                 <BookOpen className="w-5 h-5 mr-2" />
                 View Documentation
               </Button>
@@ -163,8 +136,8 @@ export default function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
-                  <div className="text-gray-600">{stat.label}</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
+                  <div className="text-gray-600 dark:text-gray-400">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -173,26 +146,29 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 px-4 bg-white">
+      <section id="features" className="py-16 px-4 bg-white dark:bg-gray-900">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold mb-4">Why Choose AlgoGuru?</h3>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Why Choose AlgoGuru?</h3>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Our platform combines visual learning with practical implementation to make complex algorithms easy to
               understand.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+              <Card
+                key={index}
+                className="text-center hover:shadow-lg transition-shadow dark:bg-gray-800 dark:border-gray-700"
+              >
                 <CardHeader>
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <feature.icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg text-gray-900 dark:text-white">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -204,28 +180,30 @@ export default function HomePage() {
       <section id="algorithms" className="py-16 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold mb-4">Explore Algorithms</h3>
-            <p className="text-gray-600 mb-8">Choose from our comprehensive collection of algorithm visualizations</p>
+            <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Explore Algorithms</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">
+              Choose from our comprehensive collection of algorithm visualizations
+            </p>
             <div className="max-w-md mx-auto relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 placeholder="Search algorithms..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               />
             </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
             {filteredCategories.map((category, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="hover:shadow-lg transition-shadow dark:bg-gray-800 dark:border-gray-700">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
-                    <CardTitle>{category.title}</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-white">{category.title}</CardTitle>
                   </div>
-                  <CardDescription>{category.description}</CardDescription>
+                  <CardDescription className="dark:text-gray-300">{category.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -235,12 +213,12 @@ export default function HomePage() {
                         href={`/visualizer/${algo.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
                         className="block"
                       >
-                        <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors group">
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
                           <div className="flex items-center space-x-3">
-                            <span className="font-medium">{algo.name}</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{algo.name}</span>
                             <Badge className={getDifficultyColor(algo.difficulty)}>{algo.difficulty}</Badge>
                           </div>
-                          <div className="flex items-center space-x-2 text-gray-500">
+                          <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
                             <span className="text-sm font-mono">{algo.time}</span>
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </div>
@@ -270,7 +248,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
+      <footer className="bg-gray-900 dark:bg-black text-white py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>

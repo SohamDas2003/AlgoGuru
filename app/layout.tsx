@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { ThemeProvider } from "@/lib/theme"
 import { AuthProvider } from "@/lib/auth"
 import { Navigation } from "@/components/navigation"
 
@@ -20,12 +21,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#ffffff" />
+      </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <Navigation />
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Navigation />
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

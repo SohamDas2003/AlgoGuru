@@ -5,24 +5,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User, Mail, Calendar, Save, Upload } from "lucide-react"
+import { Camera, Save, User, Calendar, Trophy, Target, Flame } from "lucide-react"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 export function ProfileEditor() {
-  const { user, updateProfile } = useAuth()
+  const { user, updateUser } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState("")
-
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    bio: "",
-    location: "",
-    website: "",
+    language: user?.preferences.language || "python",
+    notifications: user?.preferences.notifications || true,
   })
 
   if (!user) return null
@@ -32,10 +33,20 @@ export function ProfileEditor() {
     setMessage("")
 
     try {
-      await updateProfile({
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      updateUser({
         name: formData.name,
-        // Note: In a real app, email changes would require verification
+        email: formData.email,
+        preferences: {
+          ...user.preferences,
+          language: formData.language as "cpp" | "python" | "java",
+          notifications: formData.notifications,
+          theme: theme,
+        },
       })
+
       setMessage("Profile updated successfully!")
       setIsEditing(false)
     } catch (error) {
@@ -49,9 +60,8 @@ export function ProfileEditor() {
     setFormData({
       name: user.name,
       email: user.email,
-      bio: "",
-      location: "",
-      website: "",
+      language: user.preferences.language,
+      notifications: user.preferences.notifications,
     })
     setIsEditing(false)
     setMessage("")
@@ -59,116 +69,129 @@ export function ProfileEditor() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      {message && (
+        <Alert className={message.includes("successfully") ? "border-green-200 bg-green-50" : ""}>
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Profile Overview */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Manage your account details and preferences</CardDescription>
+          <CardTitle className="flex items-center space-x-2">
+            <User className="w-5 h-5" />
+            <span>Profile Information</span>
+          </CardTitle>
+          <CardDescription>Update your personal information and preferences</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {message && (
-            <Alert>
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
-
           {/* Avatar Section */}
           <div className="flex items-center space-x-4">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-              <AvatarFallback className="text-lg">
-                {user.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                <AvatarFallback className="text-lg">
+                  {user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                size="sm"
+                variant="outline"
+                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                disabled
+              >
+                <Camera className="w-4 h-4" />
+              </Button>
+            </div>
             <div>
               <h3 className="text-lg font-semibold">{user.name}</h3>
-              <p className="text-gray-600">{user.email}</p>
-              <Button variant="outline" size="sm" className="mt-2">
-                <Upload className="w-4 h-4 mr-2" />
-                Change Avatar
-              </Button>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{user.email}</p>
+              <Badge variant="secondary" className="mt-1">
+                {user.role === "admin" ? "Administrator" : "Student"}
+              </Badge>
             </div>
           </div>
 
+          <Separator />
+
           {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={!isEditing}
-                  className="pl-10"
-                />
-              </div>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                disabled={!isEditing}
+                className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={true} // Email changes require verification in real apps
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
               <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 disabled={!isEditing}
-                placeholder="City, Country"
+                className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              <Label htmlFor="language">Preferred Language</Label>
+              <select
+                id="language"
+                value={formData.language}
+                onChange={(e) => setFormData((prev) => ({ ...prev, language: e.target.value }))}
                 disabled={!isEditing}
-                placeholder="https://yourwebsite.com"
-              />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="python">Python</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+              </select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              disabled={!isEditing}
-              placeholder="Tell us about yourself..."
-              rows={4}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="theme">Theme</Label>
+              <select
+                id="theme"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as "light" | "dark" | "system")}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              >
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="system">System</option>
+              </select>
+            </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-2">
             {isEditing ? (
               <>
-                <Button variant="outline" onClick={handleCancel}>
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                   Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? (
+                    <>
+                      <Save className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
                 </Button>
               </>
             ) : (
@@ -178,49 +201,67 @@ export function ProfileEditor() {
         </CardContent>
       </Card>
 
-      {/* Account Information */}
-      <Card>
+      {/* Account Stats */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-          <CardDescription>View your account details and statistics</CardDescription>
+          <CardTitle className="flex items-center space-x-2">
+            <Trophy className="w-5 h-5" />
+            <span>Account Statistics</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">Member Since</p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(user.joinedAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">Account Type</p>
-                  <p className="text-sm text-gray-600 capitalize">{user.role}</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <Target className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-blue-600">{user.stats.problemsSolved}</div>
+              <div className="text-sm text-blue-700 dark:text-blue-200">Problems Solved</div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Problems Solved</p>
-                <p className="text-2xl font-bold text-green-600">{user.problemsSolved}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Total Submissions</p>
-                <p className="text-2xl font-bold text-blue-600">{user.totalSubmissions}</p>
-              </div>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+              <Trophy className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-green-600">{user.stats.accuracy}%</div>
+              <div className="text-sm text-green-700 dark:text-green-200">Accuracy Rate</div>
             </div>
+
+            <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
+              <Flame className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-orange-600">{user.streak}</div>
+              <div className="text-sm text-orange-700 dark:text-orange-200">Day Streak</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Details */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Calendar className="w-5 h-5" />
+            <span>Account Details</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium">Member Since</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {new Date(user.joinedAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium">Account Type</span>
+            <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+              {user.role === "admin" ? "Administrator" : "Student"}
+            </Badge>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium">Global Rank</span>
+            <span className="text-sm font-semibold">#{user.stats.rank}</span>
           </div>
         </CardContent>
       </Card>

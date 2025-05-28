@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Play, RotateCcw, CheckCircle, XCircle, Clock, Code, BookOpen } from "lucide-react"
 import { CodeEditor } from "@/components/practice/code-editor"
@@ -236,9 +235,10 @@ export default function PracticePage() {
     setCustomInput("")
   }
 
-  const handleLanguageChange = (language: "cpp" | "python" | "java") => {
-    setSelectedLanguage(language)
-    setCode(selectedProblem.starterCode[language])
+  const handleLanguageChange = (language: string) => {
+    const lang = language as "cpp" | "python" | "java"
+    setSelectedLanguage(lang)
+    setCode(selectedProblem.starterCode[lang])
   }
 
   const runCode = async () => {
@@ -412,20 +412,21 @@ export default function PracticePage() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Code Editor</CardTitle>
                   <div className="flex items-center space-x-2">
-                    <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="python">Python</SelectItem>
-                        <SelectItem value="cpp">C++</SelectItem>
-                        <SelectItem value="java">Java</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={resetCode} variant="outline" size="sm">
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Reset
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={selectedLanguage}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        className="px-3 py-2 border rounded-md text-sm bg-white w-32"
+                      >
+                        <option value="python">Python</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                      </select>
+                      <Button onClick={resetCode} variant="outline" size="sm">
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Reset
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>

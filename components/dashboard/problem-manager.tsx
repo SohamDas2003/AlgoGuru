@@ -196,6 +196,10 @@ export function ProblemManager() {
     })
   }
 
+  const handleDifficultyChange = (value: string) => {
+    setFormData({ ...formData, difficulty: value as "Easy" | "Medium" | "Hard" })
+  }
+
   return (
     <div className="space-y-6">
       {message && (
@@ -258,12 +262,7 @@ export function ProblemManager() {
 
                     <div className="space-y-2">
                       <Label htmlFor="difficulty">Difficulty</Label>
-                      <Select
-                        value={formData.difficulty}
-                        onValueChange={(value: "Easy" | "Medium" | "Hard") =>
-                          setFormData({ ...formData, difficulty: value })
-                        }
-                      >
+                      <Select value={formData.difficulty} onValueChange={handleDifficultyChange}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
