@@ -1,8 +1,7 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
+import type React from "react"
+import { useState, useEffect } from "react"
 import { Textarea } from "@/components/ui/textarea"
 
 interface CodeEditorProps {
@@ -25,18 +24,27 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
     updateLineNumbers(newValue)
   }
 
-  // Initialize line numbers
-  React.useEffect(() => {
+  useEffect(() => {
     updateLineNumbers(value)
   }, [value])
 
+  const getLanguageDisplay = () => {
+    switch (language) {
+      case "cpp":
+        return "C++"
+      case "python":
+        return "Python"
+      case "java":
+        return "Java"
+      default:
+        return language
+    }
+  }
+
   return (
     <div className="relative border rounded-lg overflow-hidden">
-      <div className="bg-gray-800 text-gray-100 px-3 py-2 text-sm font-medium">
-        {language === "cpp" ? "C++" : language === "python" ? "Python" : "Java"}
-      </div>
+      <div className="bg-gray-800 text-gray-100 px-3 py-2 text-sm font-medium">{getLanguageDisplay()}</div>
       <div className="flex">
-        {/* Line Numbers */}
         <div className="bg-gray-50 px-3 py-2 text-gray-500 text-sm font-mono select-none border-r">
           {lineNumbers.map((num) => (
             <div key={num} className="leading-6">
@@ -45,7 +53,6 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
           ))}
         </div>
 
-        {/* Code Area */}
         <div className="flex-1">
           <Textarea
             value={value}

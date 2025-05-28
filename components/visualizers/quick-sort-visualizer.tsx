@@ -18,7 +18,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
   const [currentStep, setCurrentStep] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
   const [customInput, setCustomInput] = useState("")
-  const [partitionBounds, setPartitionBounds] = useState<{ low: number; high: number } | null>(null)
 
   const resetVisualization = useCallback(() => {
     setComparing([])
@@ -26,7 +25,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
     setSorted([])
     setCurrentStep(0)
     setIsComplete(false)
-    setPartitionBounds(null)
     onStepChange(0)
   }, [onStepChange])
 
@@ -40,7 +38,7 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
     try {
       const newArray = customInput
         .split(",")
-        .map((num) => Number.parseInt(num.trim()))
+        .map((num) => Number.parseInt(num.trim(), 10))
         .filter((num) => !isNaN(num))
       if (newArray.length > 0) {
         setArray(newArray)
@@ -55,7 +53,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
     if (!isPlaying || isComplete) return
 
     const quickSortStep = () => {
-      // Simplified quick sort visualization
       const n = array.length
       const maxSteps = n * Math.log2(n)
 
@@ -64,11 +61,9 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
         setSorted(Array.from({ length: n }, (_, i) => i))
         setComparing([])
         setPivot(null)
-        setPartitionBounds(null)
         return
       }
 
-      // Simulate partitioning process
       const pivotIndex = Math.floor(Math.random() * array.length)
       setPivot(pivotIndex)
 
@@ -76,10 +71,11 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
       const compareIndex2 = Math.floor(Math.random() * array.length)
       setComparing([compareIndex1, compareIndex2])
 
-      // Simulate swap if needed
       if (array[compareIndex1] > array[compareIndex2] && Math.random() > 0.5) {
         const newArray = [...array]
-        ;[newArray[compareIndex1], newArray[compareIndex2]] = [newArray[compareIndex2], newArray[compareIndex1]]
+        const temp = newArray[compareIndex1]
+        newArray[compareIndex1] = newArray[compareIndex2]
+        newArray[compareIndex2] = temp
         setArray(newArray)
       }
 
@@ -102,7 +98,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
 
   return (
     <div className="w-full">
-      {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button onClick={generateRandomArray} variant="outline" size="sm">
@@ -125,7 +120,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
         </div>
       </div>
 
-      {/* Visualization */}
       <div className="flex items-end justify-center space-x-2 h-64 mb-4">
         {array.map((value, index) => (
           <div key={index} className="flex flex-col items-center">
@@ -138,7 +132,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
         ))}
       </div>
 
-      {/* Legend */}
       <div className="flex justify-center space-x-6 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
@@ -158,7 +151,6 @@ export function QuickSortVisualizer({ isPlaying, speed, onStepChange }: QuickSor
         </div>
       </div>
 
-      {/* Status */}
       <div className="text-center mt-4">
         {isComplete ? (
           <p className="text-green-600 font-semibold">Quick Sort Complete! 🎉</p>

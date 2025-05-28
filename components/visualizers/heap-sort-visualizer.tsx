@@ -38,7 +38,7 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
     try {
       const newArray = customInput
         .split(",")
-        .map((num) => Number.parseInt(num.trim()))
+        .map((num) => Number.parseInt(num.trim(), 10))
         .filter((num) => !isNaN(num))
       if (newArray.length > 0) {
         setArray(newArray)
@@ -63,15 +63,14 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
         return
       }
 
-      // Simulate heapify process
       const heapifyIndex = Math.floor(Math.random() * heapSize)
       setHeapifying([heapifyIndex])
 
-      // Simulate heap operations
       if (currentStep % 5 === 0 && heapSize > 1) {
-        // Move max element to sorted position
         const newArray = [...array]
-        ;[newArray[0], newArray[heapSize - 1]] = [newArray[heapSize - 1], newArray[0]]
+        const temp = newArray[0]
+        newArray[0] = newArray[heapSize - 1]
+        newArray[heapSize - 1] = temp
         setArray(newArray)
         setSorted((prev) => [...prev, heapSize - 1])
         setHeapSize((prev) => prev - 1)
@@ -92,9 +91,6 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
     return "bg-orange-500"
   }
 
-  const maxValue = Math.max(...array)
-
-  // Calculate tree positions
   const getTreePosition = (index: number) => {
     const level = Math.floor(Math.log2(index + 1))
     const positionInLevel = index - (Math.pow(2, level) - 1)
@@ -106,9 +102,10 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
     }
   }
 
+  const maxValue = Math.max(...array)
+
   return (
     <div className="w-full">
-      {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button onClick={generateRandomArray} variant="outline" size="sm">
@@ -131,7 +128,6 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
         </div>
       </div>
 
-      {/* Array Visualization */}
       <div className="mb-8">
         <h4 className="text-center font-semibold mb-4">Array Representation</h4>
         <div className="flex items-end justify-center space-x-2 h-48">
@@ -147,12 +143,10 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
         </div>
       </div>
 
-      {/* Heap Tree Visualization */}
       <div className="mb-6">
         <h4 className="text-center font-semibold mb-4">Heap Tree Structure</h4>
         <div className="border rounded-lg bg-white h-64 relative overflow-hidden">
           <svg width="100%" height="100%" className="absolute inset-0">
-            {/* Draw edges */}
             {array.map((_, index) => {
               const leftChild = 2 * index + 1
               const rightChild = 2 * index + 2
@@ -184,7 +178,6 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
               )
             })}
 
-            {/* Draw nodes */}
             {array.map((value, index) => {
               const pos = getTreePosition(index)
               const color = sorted.includes(index)
@@ -208,7 +201,6 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
         </div>
       </div>
 
-      {/* Legend */}
       <div className="flex justify-center space-x-6 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-orange-500 rounded"></div>
@@ -228,7 +220,6 @@ export function HeapSortVisualizer({ isPlaying, speed, onStepChange }: HeapSortV
         </div>
       </div>
 
-      {/* Status */}
       <div className="text-center mt-4">
         {isComplete ? (
           <p className="text-green-600 font-semibold">Heap Sort Complete! 🎉</p>

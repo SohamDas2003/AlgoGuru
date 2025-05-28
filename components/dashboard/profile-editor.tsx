@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,7 +35,6 @@ export function ProfileEditor() {
     setMessage("")
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       updateUser({
@@ -67,15 +68,40 @@ export function ProfileEditor() {
     setMessage("")
   }
 
+  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTheme(e.target.value as "light" | "dark" | "system")
+  }
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, language: e.target.value }))
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  }
+
+  const isSuccessMessage = message.includes("successfully")
+
   return (
     <div className="space-y-6">
       {message && (
-        <Alert className={message.includes("successfully") ? "border-green-200 bg-green-50" : ""}>
+        <Alert className={isSuccessMessage ? "border-green-200 bg-green-50" : ""}>
           <AlertDescription>{message}</AlertDescription>
         </Alert>
       )}
 
-      {/* Profile Overview */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -85,18 +111,11 @@ export function ProfileEditor() {
           <CardDescription>Update your personal information and preferences</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Avatar Section */}
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                <AvatarFallback className="text-lg">
-                  {user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <Button
                 size="sm"
@@ -118,7 +137,6 @@ export function ProfileEditor() {
 
           <Separator />
 
-          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -148,7 +166,7 @@ export function ProfileEditor() {
               <select
                 id="language"
                 value={formData.language}
-                onChange={(e) => setFormData((prev) => ({ ...prev, language: e.target.value }))}
+                onChange={handleLanguageChange}
                 disabled={!isEditing}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
@@ -163,7 +181,7 @@ export function ProfileEditor() {
               <select
                 id="theme"
                 value={theme}
-                onChange={(e) => setTheme(e.target.value as "light" | "dark" | "system")}
+                onChange={handleThemeChange}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 <option value="light">Light</option>
@@ -173,7 +191,6 @@ export function ProfileEditor() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex justify-end space-x-2">
             {isEditing ? (
               <>
@@ -201,7 +218,6 @@ export function ProfileEditor() {
         </CardContent>
       </Card>
 
-      {/* Account Stats */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -232,7 +248,6 @@ export function ProfileEditor() {
         </CardContent>
       </Card>
 
-      {/* Account Details */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -243,13 +258,7 @@ export function ProfileEditor() {
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Member Since</span>
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {new Date(user.joinedAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">{formatDate(user.joinedAt)}</span>
           </div>
 
           <div className="flex justify-between items-center">

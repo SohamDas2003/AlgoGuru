@@ -36,7 +36,7 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
     try {
       const newArray = customInput
         .split(",")
-        .map((num) => Number.parseInt(num.trim()))
+        .map((num) => Number.parseInt(num.trim(), 10))
         .filter((num) => !isNaN(num))
       if (newArray.length > 0) {
         setArray(newArray)
@@ -61,7 +61,6 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
         return
       }
 
-      // Calculate current i and j based on step
       let step = currentStep
       let i = 0
       while (step >= n - i - 1) {
@@ -72,14 +71,14 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
 
       setComparing([j, j + 1])
 
-      // Perform swap if needed
       if (array[j] > array[j + 1]) {
         const newArray = [...array]
-        ;[newArray[j], newArray[j + 1]] = [newArray[j + 1], newArray[j]]
+        const temp = newArray[j]
+        newArray[j] = newArray[j + 1]
+        newArray[j + 1] = temp
         setArray(newArray)
       }
 
-      // Update sorted elements
       if (j === n - i - 2) {
         setSorted((prev) => [...prev, n - i - 1])
       }
@@ -102,7 +101,6 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
 
   return (
     <div className="w-full">
-      {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button onClick={generateRandomArray} variant="outline" size="sm">
@@ -125,7 +123,6 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
         </div>
       </div>
 
-      {/* Visualization */}
       <div className="flex items-end justify-center space-x-2 h-64 mb-4">
         {array.map((value, index) => (
           <div key={index} className="flex flex-col items-center">
@@ -138,7 +135,6 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
         ))}
       </div>
 
-      {/* Legend */}
       <div className="flex justify-center space-x-6 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
@@ -154,7 +150,6 @@ export function BubbleSortVisualizer({ isPlaying, speed, onStepChange }: BubbleS
         </div>
       </div>
 
-      {/* Status */}
       <div className="text-center mt-4">
         {isComplete ? (
           <p className="text-green-600 font-semibold">Sorting Complete! 🎉</p>
