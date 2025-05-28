@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Code, User, LogOut, Menu, X, Sun, Moon, Monitor, Settings } from "lucide-react"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth.tsx"
 import { useTheme } from "@/lib/theme"
 
 export function Navigation() {

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth.tsx"
 import { UserDashboard } from "@/components/dashboard/user-dashboard"
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 import { Loader2 } from "lucide-react"
