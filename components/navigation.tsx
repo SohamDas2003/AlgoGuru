@@ -24,7 +24,10 @@ export function Navigation() {
     setIsProfileOpen(false)
   }
 
-  // Close dropdown when clicking outside
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme)
+  }
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const profileMenu = document.getElementById("profile-menu")
@@ -44,7 +47,6 @@ export function Navigation() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Don't show navigation on auth page or for admin users
   if (pathname === "/auth" || user?.role === "admin") {
     return null
   }
@@ -56,7 +58,6 @@ export function Navigation() {
     { href: "/#features", label: "Features" },
   ]
 
-  // Show loading state while theme is mounting
   if (!mounted) {
     return (
       <header className="border-b border-gray-200 bg-white backdrop-blur-sm sticky top-0 z-50">
@@ -81,7 +82,6 @@ export function Navigation() {
     <header className="border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm sticky top-0 z-50 transition-colors duration-300">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Code className="w-5 h-5 text-white" />
@@ -91,7 +91,6 @@ export function Navigation() {
             </h1>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => (
               <Link
@@ -104,7 +103,6 @@ export function Navigation() {
             ))}
           </nav>
 
-          {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="relative">
@@ -130,7 +128,6 @@ export function Navigation() {
                     id="profile-menu"
                     className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg z-50"
                   >
-                    {/* User Info */}
                     <div className="p-4 border-b border-gray-100 dark:border-gray-700">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none text-gray-900 dark:text-white">{user.name}</p>
@@ -139,7 +136,6 @@ export function Navigation() {
                       </div>
                     </div>
 
-                    {/* Profile Settings */}
                     <Link
                       href="/profile"
                       className="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
@@ -158,36 +154,35 @@ export function Navigation() {
                       <span>Dashboard</span>
                     </Link>
 
-                    {/* Theme Options */}
                     <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Theme</p>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => setTheme("light")}
-                          className={`flex items-center justify-center p-2 rounded-md flex-1 ${
+                          onClick={() => handleThemeChange("light")}
+                          className={`flex items-center justify-center p-2 rounded-md flex-1 transition-colors ${
                             theme === "light"
                               ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                           }`}
                         >
                           <Sun className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => setTheme("dark")}
-                          className={`flex items-center justify-center p-2 rounded-md flex-1 ${
+                          onClick={() => handleThemeChange("dark")}
+                          className={`flex items-center justify-center p-2 rounded-md flex-1 transition-colors ${
                             theme === "dark"
                               ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                           }`}
                         >
                           <Moon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => setTheme("system")}
-                          className={`flex items-center justify-center p-2 rounded-md flex-1 ${
+                          onClick={() => handleThemeChange("system")}
+                          className={`flex items-center justify-center p-2 rounded-md flex-1 transition-colors ${
                             theme === "system"
                               ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                           }`}
                         >
                           <Monitor className="h-4 w-4" />
@@ -195,7 +190,6 @@ export function Navigation() {
                       </div>
                     </div>
 
-                    {/* Logout */}
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors border-t border-gray-100 dark:border-gray-700"
@@ -224,7 +218,6 @@ export function Navigation() {
               </div>
             )}
 
-            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
@@ -236,7 +229,6 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
             <nav className="flex flex-col space-y-2 mt-4">
@@ -275,7 +267,7 @@ export function Navigation() {
                       <Button
                         variant={theme === "light" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme("light")}
+                        onClick={() => handleThemeChange("light")}
                         className="flex-1"
                       >
                         <Sun className="h-4 w-4 mr-1" />
@@ -284,7 +276,7 @@ export function Navigation() {
                       <Button
                         variant={theme === "dark" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme("dark")}
+                        onClick={() => handleThemeChange("dark")}
                         className="flex-1"
                       >
                         <Moon className="h-4 w-4 mr-1" />
@@ -293,7 +285,7 @@ export function Navigation() {
                       <Button
                         variant={theme === "system" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme("system")}
+                        onClick={() => handleThemeChange("system")}
                         className="flex-1"
                       >
                         <Monitor className="h-4 w-4 mr-1" />

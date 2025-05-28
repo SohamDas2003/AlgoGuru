@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
@@ -26,7 +25,6 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // On mount, read the theme from localStorage or use default
     const savedTheme = localStorage.getItem("theme") as Theme | null
     if (savedTheme) {
       setTheme(savedTheme)
@@ -37,10 +35,8 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
   useEffect(() => {
     if (!mounted) return
 
-    // Save theme to localStorage
     localStorage.setItem("theme", theme)
 
-    // Apply theme to document
     const root = window.document.documentElement
     root.classList.remove("light", "dark")
 
@@ -57,14 +53,12 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
 
     setActualTheme(resolvedTheme)
 
-    // Update meta theme-color
     const metaThemeColor = document.querySelector("meta[name='theme-color']")
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", resolvedTheme === "dark" ? "#0f172a" : "#ffffff")
     }
   }, [theme, mounted])
 
-  // Listen for system theme changes
   useEffect(() => {
     if (theme !== "system" || !mounted) return
 

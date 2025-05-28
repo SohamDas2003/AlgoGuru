@@ -73,28 +73,33 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
       const leftIndices = Array.from({ length: mid - start }, (_, i) => start + i)
       const rightIndices = Array.from({ length: end - mid }, (_, i) => mid + i)
 
-      // Merge step
       const merged: number[] = []
-      let i = 0,
-        j = 0
+      let i = 0
+      let j = 0
 
       while (i < left.length && j < right.length) {
         if (left[i] <= right[j]) {
-          merged.push(left[i++])
+          merged.push(left[i])
+          i++
         } else {
-          merged.push(right[j++])
+          merged.push(right[j])
+          j++
         }
       }
 
-      while (i < left.length) merged.push(left[i++])
-      while (j < right.length) merged.push(right[j++])
+      while (i < left.length) {
+        merged.push(left[i])
+        i++
+      }
+      while (j < right.length) {
+        merged.push(right[j])
+        j++
+      }
 
-      // Update the original array
       for (let k = 0; k < merged.length; k++) {
         arr[start + k] = merged[k]
       }
 
-      // Record this step
       const mergedIndices = Array.from({ length: merged.length }, (_, i) => start + i)
 
       newSteps.push({
@@ -146,7 +151,6 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
 
   return (
     <div className="w-full">
-      {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button onClick={generateRandomArray} variant="outline" size="sm">
@@ -172,7 +176,6 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
         </div>
       </div>
 
-      {/* Visualization */}
       <div className="flex items-end justify-center space-x-2 h-64 mb-4">
         {array.map((value, index) => (
           <div key={index} className="flex flex-col items-center">
@@ -185,7 +188,6 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
         ))}
       </div>
 
-      {/* Legend */}
       <div className="flex justify-center space-x-6 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-gray-400 rounded"></div>
@@ -205,7 +207,6 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
         </div>
       </div>
 
-      {/* Status */}
       <div className="text-center mt-4">
         {isComplete ? (
           <p className="text-green-600 dark:text-green-400 font-semibold">Merge Sort Complete! 🎉</p>
@@ -214,11 +215,10 @@ export function MergeSortVisualizer({ isPlaying, speed, onStepChange }: MergeSor
             {steps[currentStep]?.description || "Processing merge sort..."}
           </p>
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">Click "Start Merge Sort" to begin the visualization</p>
+          <p className="text-gray-600 dark:text-gray-400">Click Start Merge Sort to begin the visualization</p>
         )}
       </div>
 
-      {/* Algorithm Info */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
           <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">Divide Phase</h4>
