@@ -20,7 +20,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Edit, Trash2, Eye, Save, X } from "lucide-react"
 import { db, type Problem } from "@/lib/database"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth.tsx"
 
 interface TestCase {
   input: string
