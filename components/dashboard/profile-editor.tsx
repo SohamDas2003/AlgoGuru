@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Camera, Save, User, Calendar, Trophy, Target, Flame } from "lucide-react"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth.tsx"
 import { useTheme } from "@/lib/theme"
 
 export function ProfileEditor() {
