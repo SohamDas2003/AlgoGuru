@@ -4,73 +4,83 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Code, Loader2, User, Mail, Lock } from "lucide-react"
+import { Code, Mail, Lock, User, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth"
 
 export default function AuthPage() {
-  const [mode, setMode] = useState<"login" | "register">("login")
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const { login, register } = useAuth()
   const router = useRouter()
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+
+    const result = await login(email, password)
+
+    if (result.success) {
+      router.push("/dashboard")
+    } else {
+      setError(result.error || "Login failed")
+    }
+
+    setIsLoading(false)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError("")
     setIsLoading(true)
+    setError("")
+    setSuccess("")
 
-    try {
-      if (mode === "register") {
-        if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match")
-          setIsLoading(false)
-          return
-        }
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
 
-        const result = await register(formData.name, formData.email, formData.password)
-        if (result.success) {
-          router.push("/dashboard")
-        } else {
-          setError(result.error || "Registration failed")
-        }
-      } else {
-        const result = await login(formData.email, formData.password)
-        if (result.success) {
-          router.push("/dashboard")
-        } else {
-          setError(result.error || "Login failed")
-        }
-      }
-    } catch (err) {
-      setError("An unexpected error occurred")
-    } finally {
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
       setIsLoading(false)
+      return
     }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      setIsLoading(false)
+      return
+    }
+
+    const result = await register(name, email, password)
+
+    if (result.success) {
+      setSuccess("Registration successful! Please check your email to verify your account.")
+    } else {
+      setError(result.error || "Registration failed")
+    }
+
+    setIsLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
+          <div className="inline-flex items-center space-x-2 mb-4">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Code className="w-6 h-6 text-white" />
             </div>
@@ -78,166 +88,169 @@ export default function AuthPage() {
               AlgoGuru
             </h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            {mode === "login" ? "Sign in to your account" : "Create your account"}
-          </p>
+          <p className="text-gray-600">Master Data Structures & Algorithms</p>
         </div>
 
-        <Card className="dark:bg-slate-800 dark:border-slate-700">
+        <Card>
           <CardHeader>
-            <CardTitle className="dark:text-white">{mode === "login" ? "Welcome Back" : "Get Started"}</CardTitle>
-            <CardDescription className="dark:text-gray-400">
-              {mode === "login"
-                ? "Enter your credentials to access your account"
-                : "Fill in your details to create an account"}
-            </CardDescription>
+            <CardTitle>Welcome</CardTitle>
+            <CardDescription>Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <Tabs defaultValue="login" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="register">Sign Up</TabsTrigger>
+              </TabsList>
+
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              {mode === "register" && (
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="dark:text-white">
-                    Full Name
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      required
-                    />
-                  </div>
-                </div>
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="dark:text-white">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    required
-                  />
-                </div>
-              </div>
+              <TabsContent value="login" className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="login-email"
+                        name="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="dark:text-white">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="login-password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      "Sign In"
                     )}
                   </Button>
+                </form>
+
+                <div className="text-center text-sm text-gray-600">
+                  <p>Demo accounts:</p>
+                  <p>Admin: admin@algoguru.com / admin123</p>
+                  <p>User: user@example.com / user123</p>
                 </div>
-              </div>
+              </TabsContent>
 
-              {mode === "register" && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="dark:text-white">
-                    Confirm Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      required
-                    />
+              <TabsContent value="register" className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="register-name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="register-name"
+                        name="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {mode === "login" ? "Signing in..." : "Creating account..."}
-                  </>
-                ) : mode === "login" ? (
-                  "Sign In"
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-                <button
-                  type="button"
-                  onClick={() => setMode(mode === "login" ? "register" : "login")}
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {mode === "login" ? "Sign up" : "Sign in"}
-                </button>
-              </p>
-            </div>
-
-            {/* Demo Credentials - only show for login */}
-            {mode === "login" && (
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2 dark:text-white">Demo Credentials:</h4>
-                <div className="text-xs space-y-1 dark:text-gray-300">
-                  <div>
-                    <strong>Admin:</strong> admin@algoguru.com / admin123
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="register-email"
+                        name="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <strong>User:</strong> user@example.com / user123
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="register-password"
+                        name="password"
+                        type="password"
+                        placeholder="Create a password"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                        minLength={6}
+                      />
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="register-confirm-password"
+                        name="confirmPassword"
+                        type="password"
+                        placeholder="Confirm your password"
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-
-        <div className="text-center mt-6">
-          <button onClick={() => router.push("/")} className="text-sm text-gray-600 hover:underline dark:text-gray-400">
-            ← Back to Home
-          </button>
-        </div>
       </div>
     </div>
   )

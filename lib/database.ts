@@ -1,4 +1,4 @@
-"use client"
+import { supabase } from "./supabase"
 
 export interface Problem {
   id: string
@@ -12,18 +12,12 @@ export interface Problem {
     explanation?: string
   }>
   constraints: string[]
-  starterCode: {
-    cpp: string
-    python: string
-    java: string
-  }
+  starterCode: Record<string, string>
   testCases: Array<{
     input: string
     expectedOutput: string
     isHidden?: boolean
   }>
-  createdAt: string
-  createdBy: string
   tags: string[]
 }
 
@@ -34,261 +28,231 @@ export interface Submission {
   code: string
   language: "cpp" | "python" | "java"
   status: "accepted" | "wrong_answer" | "time_limit" | "runtime_error"
-  submittedAt: string
   executionTime?: number
   memory?: number
+  createdAt: string
 }
 
 export interface UserProgress {
-  userId: string
   problemId: string
   status: "solved" | "attempted" | "not_attempted"
-  bestSubmission?: string
   attempts: number
   lastAttemptAt?: string
+  bestSubmission?: string
 }
 
-// Mock database storage
-const problems: Problem[] = [
-  {
-    id: "two-sum",
-    title: "Two Sum",
-    difficulty: "Easy",
-    category: "Array",
-    description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
+export interface UserStats {
+  totalProblems: number
+  solvedProblems: number
+  attemptedProblems: number
+  totalSubmissions: number
+  acceptedSubmissions: number
+}
 
-You may assume that each input would have exactly one solution, and you may not use the same element twice.
-
-You can return the answer in any order.`,
-    examples: [
-      {
-        input: "nums = [2,7,11,15], target = 9",
-        output: "[0,1]",
-        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-      },
-      {
-        input: "nums = [3,2,4], target = 6",
-        output: "[1,2]",
-      },
-    ],
-    constraints: [
-      "2 ≤ nums.length ≤ 10⁴",
-      "-10⁹ ≤ nums[i] ≤ 10⁹",
-      "-10⁹ ≤ target ≤ 10⁹",
-      "Only one valid answer exists.",
-    ],
-    starterCode: {
-      cpp: `#include <vector>
-#include <unordered_map>
-using namespace std;
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        // Your code here
-        
-    }
-};`,
-      python: `def two_sum(nums, target):
-    """
-    :type nums: List[int]
-    :type target: int
-    :rtype: List[int]
-    """
-    # Your code here
-    pass`,
-      java: `import java.util.*;
-
-class Solution {
-    public int[] twoSum(int[] nums, int target) {
-        // Your code here
-        
-    }
-}`,
-    },
-    testCases: [
-      {
-        input: "[2,7,11,15]\n9",
-        expectedOutput: "[0,1]",
-      },
-      {
-        input: "[3,2,4]\n6",
-        expectedOutput: "[1,2]",
-      },
-      {
-        input: "[3,3]\n6",
-        expectedOutput: "[0,1]",
-        isHidden: true,
-      },
-    ],
-    createdAt: "2024-01-01",
-    createdBy: "admin",
-    tags: ["array", "hash-table"],
-  },
-  {
-    id: "reverse-string",
-    title: "Reverse String",
-    difficulty: "Easy",
-    category: "String",
-    description: `Write a function that reverses a string. The input string is given as an array of characters s.
-
-You must do this by modifying the input array in-place with O(1) extra memory.`,
-    examples: [
-      {
-        input: 's = ["h","e","l","l","o"]',
-        output: '["o","l","l","e","h"]',
-      },
-      {
-        input: 's = ["H","a","n","n","a","h"]',
-        output: '["h","a","n","n","a","H"]',
-      },
-    ],
-    constraints: ["1 ≤ s.length ≤ 10⁵", "s[i] is a printable ascii character."],
-    starterCode: {
-      cpp: `#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    void reverseString(vector<char>& s) {
-        // Your code here
-        
-    }
-};`,
-      python: `def reverse_string(s):
-    """
-    :type s: List[str]
-    :rtype: None Do not return anything, modify s in-place instead.
-    """
-    # Your code here
-    pass`,
-      java: `class Solution {
-    public void reverseString(char[] s) {
-        // Your code here
-        
-    }
-}`,
-    },
-    testCases: [
-      {
-        input: '["h","e","l","l","o"]',
-        expectedOutput: '["o","l","l","e","h"]',
-      },
-      {
-        input: '["H","a","n","n","a","h"]',
-        expectedOutput: '["h","a","n","n","a","H"]',
-      },
-    ],
-    createdAt: "2024-01-02",
-    createdBy: "admin",
-    tags: ["string", "two-pointers"],
-  },
-]
-
-const submissions: Submission[] = []
-const userProgress: UserProgress[] = []
-
-// Database operations
-export const db = {
-  // Problems
+class Database {
   async getProblems(): Promise<Problem[]> {
-    return [...problems]
-  },
+    try {
+      const { data, error } = await supabase.from("problems").select("*").order("created_at", { ascending: true })
+
+      if (error) throw error
+
+      return data.map((problem) => ({
+        id: problem.id,
+        title: problem.title,
+        difficulty: problem.difficulty,
+        category: problem.category,
+        description: problem.description,
+        examples: problem.examples,
+        constraints: problem.constraints,
+        starterCode: problem.starter_code,
+        testCases: problem.test_cases,
+        tags: problem.tags,
+      }))
+    } catch (error) {
+      console.error("Error fetching problems:", error)
+      return []
+    }
+  }
 
   async getProblem(id: string): Promise<Problem | null> {
-    return problems.find((p) => p.id === id) || null
-  },
+    try {
+      const { data, error } = await supabase.from("problems").select("*").eq("id", id).single()
 
-  async createProblem(problem: Omit<Problem, "id" | "createdAt">): Promise<Problem> {
-    const newProblem: Problem = {
-      ...problem,
-      id: `problem-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      if (error) throw error
+
+      return {
+        id: data.id,
+        title: data.title,
+        difficulty: data.difficulty,
+        category: data.category,
+        description: data.description,
+        examples: data.examples,
+        constraints: data.constraints,
+        starterCode: data.starter_code,
+        testCases: data.test_cases,
+        tags: data.tags,
+      }
+    } catch (error) {
+      console.error("Error fetching problem:", error)
+      return null
     }
-    problems.push(newProblem)
-    return newProblem
-  },
+  }
 
-  async updateProblem(id: string, updates: Partial<Problem>): Promise<Problem | null> {
-    const index = problems.findIndex((p) => p.id === id)
-    if (index === -1) return null
-
-    problems[index] = { ...problems[index], ...updates }
-    return problems[index]
-  },
-
-  async deleteProblem(id: string): Promise<boolean> {
-    const index = problems.findIndex((p) => p.id === id)
-    if (index === -1) return false
-
-    problems.splice(index, 1)
-    return true
-  },
-
-  // Submissions
-  async createSubmission(submission: Omit<Submission, "id" | "submittedAt">): Promise<Submission> {
-    const newSubmission: Submission = {
-      ...submission,
-      id: `submission-${Date.now()}`,
-      submittedAt: new Date().toISOString(),
-    }
-    submissions.push(newSubmission)
-    return newSubmission
-  },
-
-  async getUserSubmissions(userId: string): Promise<Submission[]> {
-    return submissions.filter((s) => s.userId === userId)
-  },
-
-  async getProblemSubmissions(problemId: string): Promise<Submission[]> {
-    return submissions.filter((s) => s.problemId === problemId)
-  },
-
-  // User Progress
   async getUserProgress(userId: string): Promise<UserProgress[]> {
-    return userProgress.filter((p) => p.userId === userId)
-  },
+    try {
+      const { data, error } = await supabase.from("user_progress").select("*").eq("user_id", userId)
 
-  async updateUserProgress(userId: string, problemId: string, status: UserProgress["status"]): Promise<void> {
-    const existingProgress = userProgress.find((p) => p.userId === userId && p.problemId === problemId)
+      if (error) throw error
 
-    if (existingProgress) {
-      existingProgress.status = status
-      existingProgress.attempts += 1
-      existingProgress.lastAttemptAt = new Date().toISOString()
-    } else {
-      userProgress.push({
-        userId,
-        problemId,
-        status,
-        attempts: 1,
-        lastAttemptAt: new Date().toISOString(),
+      return data.map((progress) => ({
+        problemId: progress.problem_id,
+        status: progress.status,
+        attempts: progress.attempts,
+        lastAttemptAt: progress.last_attempt_at,
+        bestSubmission: progress.best_submission,
+      }))
+    } catch (error) {
+      console.error("Error fetching user progress:", error)
+      return []
+    }
+  }
+
+  async getUserStats(userId: string): Promise<UserStats> {
+    try {
+      // Get total problems count
+      const { count: totalProblems } = await supabase.from("problems").select("*", { count: "exact", head: true })
+
+      // Get user progress
+      const { data: progressData } = await supabase.from("user_progress").select("status").eq("user_id", userId)
+
+      // Get user submissions
+      const { data: submissionsData } = await supabase.from("submissions").select("status").eq("user_id", userId)
+
+      const solvedProblems = progressData?.filter((p) => p.status === "solved").length || 0
+      const attemptedProblems = progressData?.filter((p) => p.status === "attempted").length || 0
+      const totalSubmissions = submissionsData?.length || 0
+      const acceptedSubmissions = submissionsData?.filter((s) => s.status === "accepted").length || 0
+
+      return {
+        totalProblems: totalProblems || 0,
+        solvedProblems,
+        attemptedProblems,
+        totalSubmissions,
+        acceptedSubmissions,
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error)
+      return {
+        totalProblems: 0,
+        solvedProblems: 0,
+        attemptedProblems: 0,
+        totalSubmissions: 0,
+        acceptedSubmissions: 0,
+      }
+    }
+  }
+
+  async submitCode(
+    userId: string,
+    problemId: string,
+    code: string,
+    language: "cpp" | "python" | "java",
+  ): Promise<{ success: boolean; submissionId?: string; status?: string }> {
+    try {
+      // Simulate code execution (in a real app, this would run the code against test cases)
+      const status = Math.random() > 0.3 ? "accepted" : "wrong_answer"
+      const executionTime = Math.floor(Math.random() * 1000) + 50
+      const memory = Math.floor(Math.random() * 50) + 10
+
+      // Insert submission
+      const { data: submission, error: submissionError } = await supabase
+        .from("submissions")
+        .insert({
+          user_id: userId,
+          problem_id: problemId,
+          code,
+          language,
+          status,
+          execution_time: executionTime,
+          memory,
+        })
+        .select()
+        .single()
+
+      if (submissionError) throw submissionError
+
+      // Update user progress
+      const progressStatus = status === "accepted" ? "solved" : "attempted"
+
+      const { error: progressError } = await supabase.from("user_progress").upsert({
+        user_id: userId,
+        problem_id: problemId,
+        status: progressStatus,
+        attempts: 1, // This should increment existing attempts
+        last_attempt_at: new Date().toISOString(),
+        best_submission: status === "accepted" ? submission.id : undefined,
       })
+
+      if (progressError) throw progressError
+
+      // Update user stats if solved
+      if (status === "accepted") {
+        const { data: userData } = await supabase.from("users").select("stats").eq("id", userId).single()
+
+        if (userData) {
+          const newStats = {
+            ...userData.stats,
+            problemsSolved: userData.stats.problemsSolved + 1,
+            totalSubmissions: userData.stats.totalSubmissions + 1,
+          }
+
+          await supabase.from("users").update({ stats: newStats }).eq("id", userId)
+        }
+      }
+
+      return {
+        success: true,
+        submissionId: submission.id,
+        status,
+      }
+    } catch (error) {
+      console.error("Error submitting code:", error)
+      return { success: false }
     }
-  },
+  }
 
-  // Analytics
-  async getUserStats(userId: string) {
-    const progress = await this.getUserProgress(userId)
-    const userSubmissions = await this.getUserSubmissions(userId)
+  async getSubmissions(userId: string, problemId?: string): Promise<Submission[]> {
+    try {
+      let query = supabase
+        .from("submissions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
 
-    return {
-      totalProblems: problems.length,
-      solvedProblems: progress.filter((p) => p.status === "solved").length,
-      attemptedProblems: progress.filter((p) => p.status === "attempted").length,
-      totalSubmissions: userSubmissions.length,
-      acceptedSubmissions: userSubmissions.filter((s) => s.status === "accepted").length,
+      if (problemId) {
+        query = query.eq("problem_id", problemId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      return data.map((submission) => ({
+        id: submission.id,
+        userId: submission.user_id,
+        problemId: submission.problem_id,
+        code: submission.code,
+        language: submission.language,
+        status: submission.status,
+        executionTime: submission.execution_time,
+        memory: submission.memory,
+        createdAt: submission.created_at,
+      }))
+    } catch (error) {
+      console.error("Error fetching submissions:", error)
+      return []
     }
-  },
-
-  async getAllUserStats() {
-    const allUsers = Array.from(new Set(userProgress.map((p) => p.userId)))
-    const stats = await Promise.all(
-      allUsers.map(async (userId) => ({
-        userId,
-        ...(await this.getUserStats(userId)),
-      })),
-    )
-    return stats
-  },
+  }
 }
+
+export const db = new Database()
