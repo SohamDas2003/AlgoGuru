@@ -28,7 +28,7 @@ import {
   Monitor,
   Code,
 } from "lucide-react"
-import { useAuth } from "@/lib/auth.tsx"
+import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 import { db, type Problem } from "@/lib/database"
 import { ProblemManager } from "./problem-manager"

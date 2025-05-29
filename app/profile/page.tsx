@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth.tsx"
+import { useAuth } from "@/lib/auth"
 import { ProfileEditor } from "@/components/dashboard/profile-editor"
 import { Loader2 } from "lucide-react"
 

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Code, Loader2, User, Mail, Lock } from "lucide-react"
-import { useAuth } from "@/lib/auth.tsx"
+import { useAuth } from "@/lib/auth"
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login")
