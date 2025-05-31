@@ -1,6 +1,8 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { supabase } from "./supabase"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export interface User {
   id: string
@@ -34,174 +36,164 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Mock users database with live data
-const mockUsers: User[] = [
-  {
-    id: "admin-1",
-    name: "Admin User",
-    email: "admin@algoguru.com",
-    role: "admin",
-    avatar: "/placeholder.svg?height=40&width=40",
-    joinedAt: "2024-01-01T00:00:00Z",
-    streak: 15,
-    preferences: {
-      theme: "dark",
-      language: "cpp",
-      notifications: true,
-    },
-    stats: {
-      problemsSolved: 50,
-      totalSubmissions: 75,
-      accuracy: 85,
-      rank: 1,
-    },
-  },
-  {
-    id: "user-1",
-    name: "John Doe",
-    email: "user@example.com",
-    role: "user",
-    avatar: "/placeholder.svg?height=40&width=40",
-    joinedAt: "2024-01-15T00:00:00Z",
-    streak: 7,
-    preferences: {
-      theme: "light",
-      language: "python",
-      notifications: true,
-    },
-    stats: {
-      problemsSolved: 12,
-      totalSubmissions: 20,
-      accuracy: 75,
-      rank: 156,
-    },
-  },
-]
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for stored user session
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser)
-        // Simulate live data updates
-        const updatedUser = {
-          ...parsedUser,
-          stats: {
-            ...parsedUser.stats,
-            // Simulate real-time updates
-            problemsSolved: parsedUser.stats.problemsSolved + Math.floor(Math.random() * 2),
-            totalSubmissions: parsedUser.stats.totalSubmissions + Math.floor(Math.random() * 3),
-          },
-        }
-        setUser(updatedUser)
-        localStorage.setItem("user", JSON.stringify(updatedUser))
-      } catch (error) {
-        console.error("Failed to parse stored user:", error)
-        localStorage.removeItem("user")
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserProfile(session.user)
       }
-    }
-    setIsLoading(false)
+      setIsLoading(false)
+    })
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await loadUserProfile(session.user)
+      } else {
+        setUser(null)
+      }
+      setIsLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true)
+  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const { data: profile, error } = await supabase.from("users").select("*").eq("id", supabaseUser.id).single()
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const mockCredentials = [
-      { email: "admin@algoguru.com", password: "admin123" },
-      { email: "user@example.com", password: "user123" },
-    ]
-
-    const validCredential = mockCredentials.find((cred) => cred.email === email && cred.password === password)
-
-    if (validCredential) {
-      const foundUser = mockUsers.find((u) => u.email === email)
-      if (foundUser) {
-        // Add live data updates
-        const userWithLiveData = {
-          ...foundUser,
-          stats: {
-            ...foundUser.stats,
-            problemsSolved: foundUser.stats.problemsSolved + Math.floor(Math.random() * 2),
-            totalSubmissions: foundUser.stats.totalSubmissions + Math.floor(Math.random() * 3),
-          },
+      if (error && error.code === "PGRST116") {
+        // User doesn't exist, create profile
+        const newProfile = {
+          id: supabaseUser.id,
+          email: supabaseUser.email!,
+          name: supabaseUser.user_metadata?.name || supabaseUser.email!.split("@")[0],
+          role: "user",
+          avatar_url: supabaseUser.user_metadata?.avatar_url,
         }
-        setUser(userWithLiveData)
-        localStorage.setItem("user", JSON.stringify(userWithLiveData))
-        setIsLoading(false)
-        return { success: true }
-      }
-    }
 
-    setIsLoading(false)
-    return { success: false, error: "Invalid email or password" }
+        const { data: createdProfile, error: createError } = await supabase
+          .from("users")
+          .insert(newProfile)
+          .select()
+          .single()
+
+        if (createError) throw createError
+
+        setUser({
+          id: createdProfile.id,
+          name: createdProfile.name,
+          email: createdProfile.email,
+          role: createdProfile.role,
+          avatar: createdProfile.avatar_url,
+          joinedAt: createdProfile.created_at,
+          streak: 0,
+          preferences: {
+            theme: "system",
+            language: "python",
+            notifications: true,
+          },
+          stats: {
+            problemsSolved: 0,
+            totalSubmissions: 0,
+            accuracy: 0,
+            rank: 0,
+          },
+        })
+      } else if (profile) {
+        setUser({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          avatar: profile.avatar_url,
+          joinedAt: profile.created_at,
+          streak: 0,
+          preferences: {
+            theme: "system",
+            language: "python",
+            notifications: true,
+          },
+          stats: {
+            problemsSolved: 0,
+            totalSubmissions: 0,
+            accuracy: 0,
+            rank: 0,
+          },
+        })
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error)
+    }
+  }
+
+  const login = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
   }
 
   const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      })
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Check if user already exists
-    const existingUser = mockUsers.find((u) => u.email === email)
-    if (existingUser) {
-      setIsLoading(false)
-      return { success: false, error: "User with this email already exists" }
-    }
-
-    // Create new user with live data initialization
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      role: "user",
-      avatar: `/placeholder.svg?height=40&width=40`,
-      joinedAt: new Date().toISOString(),
-      streak: 0,
-      preferences: {
-        theme: "system",
-        language: "python",
-        notifications: true,
-      },
-      stats: {
-        problemsSolved: 0,
-        totalSubmissions: 0,
-        accuracy: 0,
-        rank: mockUsers.length + 1,
-      },
-    }
-
-    mockUsers.push(newUser)
-    setUser(newUser)
-    localStorage.setItem("user", JSON.stringify(newUser))
-    setIsLoading(false)
-    return { success: true }
-  }
-
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-  }
-
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates }
-      setUser(updatedUser)
-      localStorage.setItem("user", JSON.stringify(updatedUser))
-
-      // Update in mock database
-      const userIndex = mockUsers.findIndex((u) => u.id === user.id)
-      if (userIndex !== -1) {
-        mockUsers[userIndex] = updatedUser
+      if (error) {
+        return { success: false, error: error.message }
       }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+  }
+
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({
+          name: updates.name,
+          avatar_url: updates.avatar,
+        })
+        .eq("id", user.id)
+
+      if (!error) {
+        setUser({ ...user, ...updates })
+      }
+    } catch (error) {
+      console.error("Error updating user:", error)
     }
   }
 

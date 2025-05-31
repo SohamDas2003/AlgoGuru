@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,223 +9,39 @@ import { Textarea } from "@/components/ui/textarea"
 import { Play, RotateCcw, CheckCircle, XCircle, Clock, Code, BookOpen } from "lucide-react"
 import { CodeEditor } from "@/components/practice/code-editor"
 import { ProblemList } from "@/components/practice/problem-list"
-
-interface Problem {
-  id: string
-  title: string
-  difficulty: "Easy" | "Medium" | "Hard"
-  category: string
-  description: string
-  examples: Array<{
-    input: string
-    output: string
-    explanation?: string
-  }>
-  constraints: string[]
-  starterCode: {
-    cpp: string
-    python: string
-    java: string
-  }
-  testCases: Array<{
-    input: string
-    expectedOutput: string
-  }>
-}
-
-const sampleProblems: Problem[] = [
-  {
-    id: "two-sum",
-    title: "Two Sum",
-    difficulty: "Easy",
-    category: "Array",
-    description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
-
-You may assume that each input would have exactly one solution, and you may not use the same element twice.
-
-You can return the answer in any order.`,
-    examples: [
-      {
-        input: "nums = [2,7,11,15], target = 9",
-        output: "[0,1]",
-        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-      },
-      {
-        input: "nums = [3,2,4], target = 6",
-        output: "[1,2]",
-      },
-    ],
-    constraints: [
-      "2 ≤ nums.length ≤ 10⁴",
-      "-10⁹ ≤ nums[i] ≤ 10⁹",
-      "-10⁹ ≤ target ≤ 10⁹",
-      "Only one valid answer exists.",
-    ],
-    starterCode: {
-      cpp: `#include <vector>
-#include <unordered_map>
-using namespace std;
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        // Your code here
-        
-    }
-};`,
-      python: `def two_sum(nums, target):
-    """
-    :type nums: List[int]
-    :type target: int
-    :rtype: List[int]
-    """
-    # Your code here
-    pass`,
-      java: `import java.util.*;
-
-class Solution {
-    public int[] twoSum(int[] nums, int target) {
-        // Your code here
-        
-    }
-}`,
-    },
-    testCases: [
-      {
-        input: "[2,7,11,15]\n9",
-        expectedOutput: "[0,1]",
-      },
-      {
-        input: "[3,2,4]\n6",
-        expectedOutput: "[1,2]",
-      },
-    ],
-  },
-  {
-    id: "reverse-string",
-    title: "Reverse String",
-    difficulty: "Easy",
-    category: "String",
-    description: `Write a function that reverses a string. The input string is given as an array of characters s.
-
-You must do this by modifying the input array in-place with O(1) extra memory.`,
-    examples: [
-      {
-        input: 's = ["h","e","l","l","o"]',
-        output: '["o","l","l","e","h"]',
-      },
-      {
-        input: 's = ["H","a","n","n","a","h"]',
-        output: '["h","a","n","n","a","H"]',
-      },
-    ],
-    constraints: ["1 ≤ s.length ≤ 10⁵", "s[i] is a printable ascii character."],
-    starterCode: {
-      cpp: `#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    void reverseString(vector<char>& s) {
-        // Your code here
-        
-    }
-};`,
-      python: `def reverse_string(s):
-    """
-    :type s: List[str]
-    :rtype: None Do not return anything, modify s in-place instead.
-    """
-    # Your code here
-    pass`,
-      java: `class Solution {
-    public void reverseString(char[] s) {
-        // Your code here
-        
-    }
-}`,
-    },
-    testCases: [
-      {
-        input: '["h","e","l","l","o"]',
-        expectedOutput: '["o","l","l","e","h"]',
-      },
-      {
-        input: '["H","a","n","n","a","h"]',
-        expectedOutput: '["h","a","n","n","a","H"]',
-      },
-    ],
-  },
-  {
-    id: "fibonacci",
-    title: "Fibonacci Number",
-    difficulty: "Easy",
-    category: "Dynamic Programming",
-    description: `The Fibonacci numbers, commonly denoted F(n) form a sequence, called the Fibonacci sequence, such that each number is the sum of the two preceding ones, starting from 0 and 1.
-
-Given n, calculate F(n).`,
-    examples: [
-      {
-        input: "n = 2",
-        output: "1",
-        explanation: "F(2) = F(1) + F(0) = 1 + 0 = 1.",
-      },
-      {
-        input: "n = 3",
-        output: "2",
-        explanation: "F(3) = F(2) + F(1) = 1 + 1 = 2.",
-      },
-    ],
-    constraints: ["0 ≤ n ≤ 30"],
-    starterCode: {
-      cpp: `class Solution {
-public:
-    int fib(int n) {
-        // Your code here
-        
-    }
-};`,
-      python: `def fib(n):
-    """
-    :type n: int
-    :rtype: int
-    """
-    # Your code here
-    pass`,
-      java: `class Solution {
-    public int fib(int n) {
-        // Your code here
-        
-    }
-}`,
-    },
-    testCases: [
-      {
-        input: "2",
-        expectedOutput: "1",
-      },
-      {
-        input: "3",
-        expectedOutput: "2",
-      },
-      {
-        input: "4",
-        expectedOutput: "3",
-      },
-    ],
-  },
-]
+import { db, type Problem } from "@/lib/database"
 
 export default function PracticePage() {
-  const [selectedProblem, setSelectedProblem] = useState<Problem>(sampleProblems[0])
+  const [problems, setProblems] = useState<Problem[]>([])
+  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<"cpp" | "python" | "java">("python")
-  const [code, setCode] = useState(sampleProblems[0].starterCode.python)
+  const [code, setCode] = useState("")
   const [customInput, setCustomInput] = useState("")
   const [output, setOutput] = useState("")
   const [isRunning, setIsRunning] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [testResults, setTestResults] = useState<
     Array<{ passed: boolean; input: string; expected: string; actual: string }>
   >([])
+
+  useEffect(() => {
+    loadProblems()
+  }, [])
+
+  const loadProblems = async () => {
+    try {
+      const problemsData = await db.getProblems()
+      setProblems(problemsData)
+      if (problemsData.length > 0) {
+        setSelectedProblem(problemsData[0])
+        setCode(problemsData[0].starterCode.python)
+      }
+    } catch (error) {
+      console.error("Failed to load problems:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleProblemSelect = (problem: Problem) => {
     setSelectedProblem(problem)
@@ -238,7 +54,9 @@ export default function PracticePage() {
   const handleLanguageChange = (language: string) => {
     const lang = language as "cpp" | "python" | "java"
     setSelectedLanguage(lang)
-    setCode(selectedProblem.starterCode[lang])
+    if (selectedProblem) {
+      setCode(selectedProblem.starterCode[lang])
+    }
   }
 
   const runCode = async () => {
@@ -263,6 +81,8 @@ export default function PracticePage() {
   }
 
   const runTests = async () => {
+    if (!selectedProblem) return
+
     setIsRunning(true)
     setTestResults([])
 
@@ -287,9 +107,11 @@ export default function PracticePage() {
   }
 
   const resetCode = () => {
-    setCode(selectedProblem.starterCode[selectedLanguage])
-    setOutput("")
-    setTestResults([])
+    if (selectedProblem) {
+      setCode(selectedProblem.starterCode[selectedLanguage])
+      setOutput("")
+      setTestResults([])
+    }
   }
 
   const getDifficultyColor = (difficulty: string) => {
@@ -303,6 +125,37 @@ export default function PracticePage() {
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading problems...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (problems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No problems available. Please contact an administrator.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!selectedProblem) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Please select a problem to start practicing.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -330,11 +183,7 @@ export default function PracticePage() {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Problem List Sidebar */}
           <div className="lg:col-span-1">
-            <ProblemList
-              problems={sampleProblems}
-              selectedProblem={selectedProblem}
-              onProblemSelect={handleProblemSelect}
-            />
+            <ProblemList problems={problems} selectedProblem={selectedProblem} onProblemSelect={handleProblemSelect} />
           </div>
 
           {/* Main Content */}

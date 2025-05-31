@@ -1,109 +1,97 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, TrendingUp, TrendingDown, Minus, Eye, Award } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, TrendingUp, Users, Award, Target } from "lucide-react"
 
-interface StudentStats {
+interface StudentData {
   userId: string
-  userName: string
-  userEmail: string
-  totalProblems: number
-  solvedProblems: number
-  attemptedProblems: number
+  name: string
+  email: string
+  problemsSolved: number
   totalSubmissions: number
-  acceptedSubmissions: number
-  joinedAt: string
+  accuracy: number
   lastActive: string
   streak: number
+  rank: number
 }
 
 export function StudentProgress() {
-  const [students, setStudents] = useState<StudentStats[]>([])
-  const [filteredStudents, setFilteredStudents] = useState<StudentStats[]>([])
+  const [students, setStudents] = useState<StudentData[]>([])
+  const [filteredStudents, setFilteredStudents] = useState<StudentData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("rank")
   const [isLoading, setIsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState("solved")
 
   useEffect(() => {
     loadStudentData()
   }, [])
 
   useEffect(() => {
-    const filtered = students.filter(
-      (student) =>
-        student.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.userEmail.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.userName.localeCompare(b.userName)
-        case "solved":
-          return b.solvedProblems - a.solvedProblems
-        case "accuracy":
-          const aAccuracy = a.totalSubmissions > 0 ? (a.acceptedSubmissions / a.totalSubmissions) * 100 : 0
-          const bAccuracy = b.totalSubmissions > 0 ? (b.acceptedSubmissions / b.totalSubmissions) * 100 : 0
-          return bAccuracy - aAccuracy
-        case "streak":
-          return b.streak - a.streak
-        default:
-          return 0
-      }
-    })
-
-    setFilteredStudents(sorted)
+    filterAndSortStudents()
   }, [students, searchTerm, sortBy])
 
   const loadStudentData = async () => {
     try {
-      const mockStudents: StudentStats[] = [
+      // Mock student data since we don't have user management yet
+      const mockStudents: StudentData[] = [
+        {
+          userId: "1",
+          name: "Alice Johnson",
+          email: "alice@example.com",
+          problemsSolved: 45,
+          totalSubmissions: 67,
+          accuracy: 85.2,
+          lastActive: "2024-01-15",
+          streak: 12,
+          rank: 1,
+        },
         {
           userId: "2",
-          userName: "John Doe",
-          userEmail: "user@example.com",
-          totalProblems: 50,
-          solvedProblems: 12,
-          attemptedProblems: 8,
-          totalSubmissions: 25,
-          acceptedSubmissions: 15,
-          joinedAt: "2024-01-15",
-          lastActive: "2024-01-20",
-          streak: 5,
+          name: "Bob Smith",
+          email: "bob@example.com",
+          problemsSolved: 38,
+          totalSubmissions: 52,
+          accuracy: 78.9,
+          lastActive: "2024-01-14",
+          streak: 8,
+          rank: 2,
         },
         {
           userId: "3",
-          userName: "Jane Smith",
-          userEmail: "jane@example.com",
-          totalProblems: 50,
-          solvedProblems: 28,
-          attemptedProblems: 5,
-          totalSubmissions: 45,
-          acceptedSubmissions: 35,
-          joinedAt: "2024-01-10",
-          lastActive: "2024-01-21",
-          streak: 12,
+          name: "Carol Davis",
+          email: "carol@example.com",
+          problemsSolved: 32,
+          totalSubmissions: 48,
+          accuracy: 82.1,
+          lastActive: "2024-01-13",
+          streak: 5,
+          rank: 3,
         },
         {
           userId: "4",
-          userName: "Mike Johnson",
-          userEmail: "mike@example.com",
-          totalProblems: 50,
-          solvedProblems: 8,
-          attemptedProblems: 12,
-          totalSubmissions: 30,
-          acceptedSubmissions: 12,
-          joinedAt: "2024-01-20",
-          lastActive: "2024-01-19",
-          streak: 0,
+          name: "David Wilson",
+          email: "david@example.com",
+          problemsSolved: 28,
+          totalSubmissions: 41,
+          accuracy: 76.3,
+          lastActive: "2024-01-12",
+          streak: 3,
+          rank: 4,
+        },
+        {
+          userId: "5",
+          name: "Eva Brown",
+          email: "eva@example.com",
+          problemsSolved: 25,
+          totalSubmissions: 35,
+          accuracy: 88.6,
+          lastActive: "2024-01-11",
+          streak: 15,
+          rank: 5,
         },
       ]
 
@@ -115,172 +103,63 @@ export function StudentProgress() {
     }
   }
 
-  const getAccuracyPercentage = (student: StudentStats) => {
-    if (student.totalSubmissions === 0) return 0
-    return Math.round((student.acceptedSubmissions / student.totalSubmissions) * 100)
+  const filterAndSortStudents = () => {
+    const filtered = students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name)
+        case "problemsSolved":
+          return b.problemsSolved - a.problemsSolved
+        case "accuracy":
+          return b.accuracy - a.accuracy
+        case "streak":
+          return b.streak - a.streak
+        case "rank":
+        default:
+          return a.rank - b.rank
+      }
+    })
+
+    setFilteredStudents(filtered)
   }
 
-  const getProgressPercentage = (student: StudentStats) => {
-    return Math.round((student.solvedProblems / student.totalProblems) * 100)
-  }
-
-  const getTrendIcon = (student: StudentStats) => {
-    const accuracy = getAccuracyPercentage(student)
-    if (accuracy >= 70) return <TrendingUp className="w-4 h-4 text-green-600" />
-    if (accuracy >= 50) return <Minus className="w-4 h-4 text-yellow-600" />
-    return <TrendingDown className="w-4 h-4 text-red-600" />
+  const getAccuracyColor = (accuracy: number) => {
+    if (accuracy >= 85) return "text-green-600"
+    if (accuracy >= 70) return "text-yellow-600"
+    return "text-red-600"
   }
 
   const getStreakColor = (streak: number) => {
-    if (streak >= 14) return "text-purple-600"
-    if (streak >= 7) return "text-blue-600"
-    if (streak >= 3) return "text-green-600"
+    if (streak >= 10) return "text-purple-600"
+    if (streak >= 5) return "text-blue-600"
     return "text-gray-600"
   }
 
-  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortBy(event.target.value)
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading student progress...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Student Progress Monitoring</CardTitle>
-              <CardDescription>Track individual student performance and engagement</CardDescription>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search students..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={handleSortChange}
-                  className="px-3 py-2 border rounded-md text-sm bg-white"
-                >
-                  <option value="solved">Sort by Problems Solved</option>
-                  <option value="accuracy">Sort by Accuracy</option>
-                  <option value="streak">Sort by Streak</option>
-                  <option value="name">Sort by Name</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading student data...</div>
-          ) : filteredStudents.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">No students found matching your search.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredStudents.map((student) => (
-                <Card key={student.userId} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src="/placeholder.svg" alt={student.userName} />
-                        <AvatarFallback>
-                          {student.userName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold">{student.userName}</h3>
-                        <p className="text-sm text-gray-600">{student.userEmail}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            Joined {new Date(student.joinedAt).toLocaleDateString()}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            Last active {new Date(student.lastActive).toLocaleDateString()}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-8">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">{student.solvedProblems}</div>
-                        <div className="text-xs text-gray-600">Solved</div>
-                        <div className="w-16 mt-1">
-                          <Progress value={getProgressPercentage(student)} className="h-1" />
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="flex items-center justify-center space-x-1">
-                          <span className="text-2xl font-bold">{getAccuracyPercentage(student)}%</span>
-                          {getTrendIcon(student)}
-                        </div>
-                        <div className="text-xs text-gray-600">Accuracy</div>
-                        <div className="text-xs text-gray-500">
-                          {student.acceptedSubmissions}/{student.totalSubmissions}
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <div className={`text-2xl font-bold ${getStreakColor(student.streak)}`}>{student.streak}</div>
-                        <div className="text-xs text-gray-600">Day Streak</div>
-                        {student.streak >= 7 && <Award className="w-4 h-4 text-yellow-500 mx-auto mt-1" />}
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="grid grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Total Problems:</span>
-                        <span className="ml-2 font-medium">{student.totalProblems}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Attempted:</span>
-                        <span className="ml-2 font-medium text-yellow-600">{student.attemptedProblems}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Not Started:</span>
-                        <span className="ml-2 font-medium text-gray-500">
-                          {student.totalProblems - student.solvedProblems - student.attemptedProblems}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Success Rate:</span>
-                        <span className="ml-2 font-medium">{getAccuracyPercentage(student)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
+      {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{students.length}</div>
@@ -289,45 +168,137 @@ export function StudentProgress() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Problems Solved</CardTitle>
+            <Target className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {students.length > 0
-                ? Math.round(students.reduce((sum, s) => sum + getProgressPercentage(s), 0) / students.length)
+                ? Math.round(students.reduce((sum, s) => sum + s.problemsSolved, 0) / students.length)
                 : 0}
-              %
             </div>
-            <p className="text-xs text-muted-foreground">Problems completed</p>
+            <p className="text-xs text-muted-foreground">Per student</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Accuracy</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Accuracy</CardTitle>
+            <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {students.length > 0
-                ? Math.round(students.reduce((sum, s) => sum + getAccuracyPercentage(s), 0) / students.length)
-                : 0}
+              {students.length > 0 ? Math.round(students.reduce((sum, s) => sum + s.accuracy, 0) / students.length) : 0}
               %
             </div>
-            <p className="text-xs text-muted-foreground">Submission success</p>
+            <p className="text-xs text-muted-foreground">Success rate</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Streaks</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
+            <Award className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{students.filter((s) => s.streak > 0).length}</div>
-            <p className="text-xs text-muted-foreground">Students with streaks</p>
+            <div className="text-2xl font-bold">{students.length > 0 ? students[0]?.name.split(" ")[0] : "N/A"}</div>
+            <p className="text-xs text-muted-foreground">Highest rank</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Student Progress Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Student Progress</CardTitle>
+              <CardDescription>Track individual student performance and progress</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rank">Rank</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="problemsSolved">Problems Solved</SelectItem>
+                <SelectItem value="accuracy">Accuracy</SelectItem>
+                <SelectItem value="streak">Streak</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Student List */}
+          <div className="space-y-4">
+            {filteredStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No students found matching your criteria.</p>
+              </div>
+            ) : (
+              filteredStudents.map((student) => (
+                <div
+                  key={student.userId}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-semibold">
+                      #{student.rank}
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{student.name}</h3>
+                      <p className="text-sm text-gray-600">{student.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-6">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold">{student.problemsSolved}</div>
+                      <div className="text-xs text-gray-600">Problems</div>
+                    </div>
+
+                    <div className="text-center">
+                      <div className={`text-lg font-semibold ${getAccuracyColor(student.accuracy)}`}>
+                        {student.accuracy.toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-gray-600">Accuracy</div>
+                    </div>
+
+                    <div className="text-center">
+                      <div className={`text-lg font-semibold ${getStreakColor(student.streak)}`}>{student.streak}</div>
+                      <div className="text-xs text-gray-600">Streak</div>
+                    </div>
+
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600">{new Date(student.lastActive).toLocaleDateString()}</div>
+                      <div className="text-xs text-gray-600">Last Active</div>
+                    </div>
+
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
