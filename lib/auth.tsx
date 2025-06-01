@@ -39,8 +39,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [mounted])
 
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
@@ -195,6 +202,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error updating user:", error)
     }
+  }
+
+  // Don't render anything until mounted to prevent hydration issues
+  if (!mounted) {
+    return null
   }
 
   return (
