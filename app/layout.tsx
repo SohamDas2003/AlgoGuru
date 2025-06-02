@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth"
+import { Navigation } from "@/components/navigation"
 import { SimpleChatbot } from "@/components/chatbot/simple-chatbot"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
+            <Navigation />
             {children}
             <SimpleChatbot />
           </AuthProvider>

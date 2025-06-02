@@ -36,6 +36,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Demo users for testing
+const DEMO_USERS = {
+  "admin@algoguru.com": {
+    id: "admin-demo-id",
+    name: "Admin User",
+    email: "admin@algoguru.com",
+    role: "admin" as const,
+    password: "admin123",
+  },
+  "user@example.com": {
+    id: "user-demo-id",
+    name: "Demo User",
+    email: "user@example.com",
+    role: "user" as const,
+    password: "user123",
+  },
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -48,7 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mounted) return
 
-    // Get initial session
+    // Check for demo user in localStorage
+    const demoUser = localStorage.getItem("demoUser")
+    if (demoUser) {
+      const userData = JSON.parse(demoUser)
+      setUser(userData)
+      setIsLoading(false)
+      return
+    }
+
+    // Get initial session from Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         loadUserProfile(session.user)
@@ -64,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadUserProfile(session.user)
       } else {
         setUser(null)
+        localStorage.removeItem("demoUser")
       }
       setIsLoading(false)
     })
@@ -93,55 +121,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (createError) throw createError
 
-        setUser({
-          id: createdProfile.id,
-          name: createdProfile.name,
-          email: createdProfile.email,
-          role: createdProfile.role,
-          avatar: createdProfile.avatar_url,
-          joinedAt: createdProfile.created_at,
-          streak: 0,
-          preferences: {
-            theme: "system",
-            language: "python",
-            notifications: true,
-          },
-          stats: {
-            problemsSolved: 0,
-            totalSubmissions: 0,
-            accuracy: 0,
-            rank: 0,
-          },
-        })
+        setUser(createUserObject(createdProfile))
       } else if (profile) {
-        setUser({
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          role: profile.role,
-          avatar: profile.avatar_url,
-          joinedAt: profile.created_at,
-          streak: 0,
-          preferences: {
-            theme: "system",
-            language: "python",
-            notifications: true,
-          },
-          stats: {
-            problemsSolved: 0,
-            totalSubmissions: 0,
-            accuracy: 0,
-            rank: 0,
-          },
-        })
+        setUser(createUserObject(profile))
       }
     } catch (error) {
       console.error("Error loading user profile:", error)
     }
   }
 
+  const createUserObject = (profile: any): User => ({
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    avatar: profile.avatar_url,
+    joinedAt: profile.created_at || new Date().toISOString(),
+    streak: 0,
+    preferences: {
+      theme: "system",
+      language: "python",
+      notifications: true,
+    },
+    stats: {
+      problemsSolved: 0,
+      totalSubmissions: 0,
+      accuracy: 0,
+      rank: 0,
+    },
+  })
+
   const login = async (email: string, password: string) => {
     try {
+      // Check for demo users first
+      const demoUser = DEMO_USERS[email as keyof typeof DEMO_USERS]
+      if (demoUser && demoUser.password === password) {
+        const userData = createUserObject({
+          id: demoUser.id,
+          name: demoUser.name,
+          email: demoUser.email,
+          role: demoUser.role,
+          avatar_url: null,
+          created_at: new Date().toISOString(),
+        })
+
+        setUser(userData)
+        localStorage.setItem("demoUser", JSON.stringify(userData))
+        return { success: true }
+      }
+
+      // Try Supabase authentication
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -159,6 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     try {
+      // Check if it's a demo email
+      if (email in DEMO_USERS) {
+        return { success: false, error: "This email is reserved for demo purposes. Please use a different email." }
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -180,6 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
+    // Clear demo user
+    localStorage.removeItem("demoUser")
+
+    // Sign out from Supabase
     await supabase.auth.signOut()
     setUser(null)
   }
@@ -188,6 +226,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return
 
     try {
+      // Update demo user in localStorage
+      const demoUser = localStorage.getItem("demoUser")
+      if (demoUser) {
+        const updatedUser = { ...user, ...updates }
+        setUser(updatedUser)
+        localStorage.setItem("demoUser", JSON.stringify(updatedUser))
+        return
+      }
+
+      // Update Supabase user
       const { error } = await supabase
         .from("users")
         .update({

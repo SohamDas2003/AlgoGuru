@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Code, Loader2, User, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Code, Loader2, User, Mail, Lock, CheckCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth"
 
 export function AuthForm() {
@@ -20,7 +20,9 @@ export function AuthForm() {
     confirmPassword: "",
   })
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const { login, register } = useAuth()
@@ -28,40 +30,123 @@ export function AuthForm() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear errors when user starts typing
+    if (error) setError("")
+    if (success) setSuccess("")
+  }
+
+  const validateForm = () => {
+    if (mode === "register") {
+      if (!formData.name.trim()) {
+        setError("Name is required")
+        return false
+      }
+      if (formData.name.trim().length < 2) {
+        setError("Name must be at least 2 characters long")
+        return false
+      }
+    }
+
+    if (!formData.email.trim()) {
+      setError("Email is required")
+      return false
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address")
+      return false
+    }
+
+    if (!formData.password) {
+      setError("Password is required")
+      return false
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return false
+    }
+
+    if (mode === "register") {
+      if (!formData.confirmPassword) {
+        setError("Please confirm your password")
+        return false
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match")
+        return false
+      }
+    }
+
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
+
+    if (!validateForm()) {
+      return
+    }
+
     setIsLoading(true)
 
     try {
       if (mode === "register") {
-        if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match")
-          setIsLoading(false)
-          return
-        }
-
-        const result = await register(formData.name, formData.email, formData.password)
+        const result = await register(formData.name.trim(), formData.email.trim(), formData.password)
         if (result.success) {
-          router.push("/dashboard")
+          setSuccess("Account created successfully! Please check your email for verification.")
+          // Reset form
+          setFormData({
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+          })
+          // Switch to login mode after a delay
+          setTimeout(() => {
+            setMode("login")
+            setSuccess("")
+          }, 3000)
         } else {
           setError(result.error || "Registration failed")
         }
       } else {
-        const result = await login(formData.email, formData.password)
+        const result = await login(formData.email.trim(), formData.password)
         if (result.success) {
-          router.push("/dashboard")
+          setSuccess("Login successful! Redirecting...")
+          setTimeout(() => {
+            router.push("/dashboard")
+          }, 1000)
         } else {
           setError(result.error || "Login failed")
         }
       }
     } catch (err) {
-      setError("An unexpected error occurred")
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const fillDemoCredentials = (type: "admin" | "user") => {
+    if (type === "admin") {
+      setFormData({
+        ...formData,
+        email: "admin@algoguru.com",
+        password: "admin123",
+      })
+    } else {
+      setFormData({
+        ...formData,
+        email: "user@example.com",
+        password: "user123",
+      })
+    }
+    setError("")
+    setSuccess("")
   }
 
   return (
@@ -99,6 +184,13 @@ export function AuthForm() {
                 </Alert>
               )}
 
+              {success && (
+                <Alert className="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+
               {mode === "register" && (
                 <div className="space-y-2">
                   <Label htmlFor="name" className="dark:text-white">
@@ -114,6 +206,7 @@ export function AuthForm() {
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -133,6 +226,7 @@ export function AuthForm() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -151,6 +245,7 @@ export function AuthForm() {
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     className="pl-10 pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     required
+                    disabled={isLoading}
                   />
                   <Button
                     type="button"
@@ -158,6 +253,7 @@ export function AuthForm() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-gray-400" />
@@ -177,13 +273,28 @@ export function AuthForm() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                      className="pl-10 pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       required
+                      disabled={isLoading}
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={isLoading}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
@@ -207,8 +318,19 @@ export function AuthForm() {
                 {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
                 <button
                   type="button"
-                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                  onClick={() => {
+                    setMode(mode === "login" ? "register" : "login")
+                    setError("")
+                    setSuccess("")
+                    setFormData({
+                      name: "",
+                      email: "",
+                      password: "",
+                      confirmPassword: "",
+                    })
+                  }}
                   className="text-blue-600 hover:underline dark:text-blue-400"
+                  disabled={isLoading}
                 >
                   {mode === "login" ? "Sign up" : "Sign in"}
                 </button>
@@ -218,14 +340,30 @@ export function AuthForm() {
             {/* Demo Credentials - only show for login */}
             {mode === "login" && (
               <div className="mt-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2 dark:text-white">Demo Credentials:</h4>
-                <div className="text-xs space-y-1 dark:text-gray-300">
-                  <div>
-                    <strong>Admin:</strong> admin@algoguru.com / admin123
-                  </div>
-                  <div>
-                    <strong>User:</strong> user@example.com / user123
-                  </div>
+                <h4 className="font-semibold text-sm mb-3 dark:text-white">Demo Credentials:</h4>
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => fillDemoCredentials("admin")}
+                    disabled={isLoading}
+                  >
+                    <User className="w-3 h-3 mr-1" />
+                    Admin: admin@algoguru.com / admin123
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => fillDemoCredentials("user")}
+                    disabled={isLoading}
+                  >
+                    <User className="w-3 h-3 mr-1" />
+                    User: user@example.com / user123
+                  </Button>
                 </div>
               </div>
             )}
@@ -233,7 +371,11 @@ export function AuthForm() {
         </Card>
 
         <div className="text-center mt-6">
-          <button onClick={() => router.push("/")} className="text-sm text-gray-600 hover:underline dark:text-gray-400">
+          <button
+            onClick={() => router.push("/")}
+            className="text-sm text-gray-600 hover:underline dark:text-gray-400"
+            disabled={isLoading}
+          >
             ← Back to Home
           </button>
         </div>

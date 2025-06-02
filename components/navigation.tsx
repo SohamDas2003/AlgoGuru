@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Code, User, LogOut, Menu, X, Sun, Moon, Monitor, Settings } from "lucide-react"
 import { useAuth } from "@/lib/auth"
-import { useTheme } from "@/lib/theme"
+import { useTheme } from "@/components/theme-provider"
 
 export function Navigation() {
   const { user, logout } = useAuth()
@@ -47,6 +47,7 @@ export function Navigation() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Hide navigation on auth page or for admin users
   if (pathname === "/auth" || user?.role === "admin") {
     return null
   }
@@ -58,6 +59,7 @@ export function Navigation() {
     { href: "/#features", label: "Features" },
   ]
 
+  // Show loading state while theme is mounting
   if (!mounted) {
     return (
       <header className="border-b border-gray-200 bg-white backdrop-blur-sm sticky top-0 z-50">
