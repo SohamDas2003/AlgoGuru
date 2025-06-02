@@ -6,44 +6,125 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Play, RotateCcw, CheckCircle, XCircle, Clock, Code, BookOpen } from "lucide-react"
-import { CodeEditor } from "@/components/practice/code-editor"
-import { ProblemList } from "@/components/practice/problem-list"
-import { db, type Problem } from "@/lib/database"
+import { Play, RotateCcw, CheckCircle, XCircle, Clock, Code, BookOpen, Filter } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+// Mock problems data
+const mockProblems = [
+  {
+    id: "1",
+    title: "Two Sum",
+    difficulty: "Easy",
+    category: "Array",
+    description:
+      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    constraints: ["2 ≤ nums.length ≤ 10⁴", "-10⁹ ≤ nums[i] ≤ 10⁹", "-10⁹ ≤ target ≤ 10⁹"],
+    examples: [
+      {
+        input: "nums = [2,7,11,15], target = 9",
+        output: "[0,1]",
+        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
+      },
+    ],
+    starterCode: {
+      python: "def two_sum(nums, target):\n    # Your code here\n    pass",
+      cpp: "#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Your code here\n        \n    }\n};",
+      java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n        \n    }\n}",
+    },
+    testCases: [
+      { input: "[2,7,11,15]\n9", expectedOutput: "[0,1]" },
+      { input: "[3,2,4]\n6", expectedOutput: "[1,2]" },
+    ],
+  },
+  {
+    id: "2",
+    title: "Valid Parentheses",
+    difficulty: "Easy",
+    category: "Stack",
+    description:
+      "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+    constraints: ["1 ≤ s.length ≤ 10⁴", "s consists of parentheses only '()[]{}'."],
+    examples: [
+      {
+        input: 's = "()"',
+        output: "true",
+        explanation: "The string is valid.",
+      },
+    ],
+    starterCode: {
+      python: "def is_valid(s):\n    # Your code here\n    pass",
+      cpp: "#include <string>\nusing namespace std;\n\nclass Solution {\npublic:\n    bool isValid(string s) {\n        // Your code here\n        \n    }\n};",
+      java: "class Solution {\n    public boolean isValid(String s) {\n        // Your code here\n        \n    }\n}",
+    },
+    testCases: [
+      { input: '"()"', expectedOutput: "true" },
+      { input: '"()[]{}"', expectedOutput: "true" },
+      { input: '"(]"', expectedOutput: "false" },
+    ],
+  },
+  {
+    id: "3",
+    title: "Binary Search",
+    difficulty: "Easy",
+    category: "Binary Search",
+    description:
+      "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums.",
+    constraints: ["1 ≤ nums.length ≤ 10⁴", "-10⁴ < nums[i], target < 10⁴"],
+    examples: [
+      {
+        input: "nums = [-1,0,3,5,9,12], target = 9",
+        output: "4",
+        explanation: "9 exists in nums and its index is 4",
+      },
+    ],
+    starterCode: {
+      python: "def search(nums, target):\n    # Your code here\n    pass",
+      cpp: "#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    int search(vector<int>& nums, int target) {\n        // Your code here\n        \n    }\n};",
+      java: "class Solution {\n    public int search(int[] nums, int target) {\n        // Your code here\n        \n    }\n}",
+    },
+    testCases: [
+      { input: "[-1,0,3,5,9,12]\n9", expectedOutput: "4" },
+      { input: "[-1,0,3,5,9,12]\n2", expectedOutput: "-1" },
+    ],
+  },
+]
 
 export default function PracticePage() {
-  const [problems, setProblems] = useState<Problem[]>([])
-  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null)
+  const [problems, setProblems] = useState(mockProblems)
+  const [filteredProblems, setFilteredProblems] = useState(mockProblems)
+  const [selectedProblem, setSelectedProblem] = useState(mockProblems[0])
   const [selectedLanguage, setSelectedLanguage] = useState<"cpp" | "python" | "java">("python")
-  const [code, setCode] = useState("")
+  const [code, setCode] = useState(mockProblems[0].starterCode.python)
   const [customInput, setCustomInput] = useState("")
   const [output, setOutput] = useState("")
   const [isRunning, setIsRunning] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [testResults, setTestResults] = useState<
     Array<{ passed: boolean; input: string; expected: string; actual: string }>
   >([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [difficultyFilter, setDifficultyFilter] = useState("all")
+  const [categoryFilter, setCategoryFilter] = useState("all")
 
   useEffect(() => {
-    loadProblems()
-  }, [])
+    let filtered = problems
 
-  const loadProblems = async () => {
-    try {
-      const problemsData = await db.getProblems()
-      setProblems(problemsData)
-      if (problemsData.length > 0) {
-        setSelectedProblem(problemsData[0])
-        setCode(problemsData[0].starterCode.python)
-      }
-    } catch (error) {
-      console.error("Failed to load problems:", error)
-    } finally {
-      setIsLoading(false)
+    if (searchTerm) {
+      filtered = filtered.filter((problem) => problem.title.toLowerCase().includes(searchTerm.toLowerCase()))
     }
-  }
 
-  const handleProblemSelect = (problem: Problem) => {
+    if (difficultyFilter !== "all") {
+      filtered = filtered.filter((problem) => problem.difficulty === difficultyFilter)
+    }
+
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((problem) => problem.category === categoryFilter)
+    }
+
+    setFilteredProblems(filtered)
+  }, [searchTerm, difficultyFilter, categoryFilter, problems])
+
+  const handleProblemSelect = (problem: (typeof mockProblems)[0]) => {
     setSelectedProblem(problem)
     setCode(problem.starterCode[selectedLanguage])
     setOutput("")
@@ -54,9 +135,7 @@ export default function PracticePage() {
   const handleLanguageChange = (language: string) => {
     const lang = language as "cpp" | "python" | "java"
     setSelectedLanguage(lang)
-    if (selectedProblem) {
-      setCode(selectedProblem.starterCode[lang])
-    }
+    setCode(selectedProblem.starterCode[lang])
   }
 
   const runCode = async () => {
@@ -64,10 +143,8 @@ export default function PracticePage() {
     setOutput("")
 
     try {
-      // Simulate code execution
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Mock execution result
       if (customInput.trim()) {
         setOutput(`Input: ${customInput}\nOutput: [Mock output for custom input]\nExecution time: 0.05s`)
       } else {
@@ -81,18 +158,14 @@ export default function PracticePage() {
   }
 
   const runTests = async () => {
-    if (!selectedProblem) return
-
     setIsRunning(true)
     setTestResults([])
 
     try {
-      // Simulate test execution
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      // Mock test results
       const results = selectedProblem.testCases.map((testCase, index) => ({
-        passed: Math.random() > 0.3, // 70% pass rate for demo
+        passed: Math.random() > 0.3,
         input: testCase.input,
         expected: testCase.expectedOutput,
         actual: index === 0 ? testCase.expectedOutput : "[Mock output]",
@@ -107,66 +180,33 @@ export default function PracticePage() {
   }
 
   const resetCode = () => {
-    if (selectedProblem) {
-      setCode(selectedProblem.starterCode[selectedLanguage])
-      setOutput("")
-      setTestResults([])
-    }
+    setCode(selectedProblem.starterCode[selectedLanguage])
+    setOutput("")
+    setTestResults([])
   }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-400"
       case "Medium":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400"
       case "Hard":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading problems...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (problems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No problems available. Please contact an administrator.</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!selectedProblem) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Please select a problem to start practicing.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-16 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Online Coding Practice</h1>
-              <p className="text-gray-600">Solve problems with our in-browser code editor</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Practice Problems</h1>
+              <p className="text-gray-600 dark:text-gray-400">Solve coding problems to improve your skills</p>
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="secondary" className="flex items-center space-x-1">
@@ -183,7 +223,74 @@ export default function PracticePage() {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Problem List Sidebar */}
           <div className="lg:col-span-1">
-            <ProblemList problems={problems} selectedProblem={selectedProblem} onProblemSelect={handleProblemSelect} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Filter className="h-5 w-5" />
+                  <span>Problems</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Search */}
+                <Input
+                  placeholder="Search problems..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+
+                {/* Filters */}
+                <div className="space-y-2">
+                  <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Difficulties</SelectItem>
+                      <SelectItem value="Easy">Easy</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="Array">Array</SelectItem>
+                      <SelectItem value="Stack">Stack</SelectItem>
+                      <SelectItem value="Binary Search">Binary Search</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Problem List */}
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredProblems.map((problem) => (
+                    <div
+                      key={problem.id}
+                      onClick={() => handleProblemSelect(problem)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedProblem.id === problem.id
+                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                          : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-sm">{problem.title}</h3>
+                        <Badge size="sm" className={getDifficultyColor(problem.difficulty)}>
+                          {problem.difficulty}
+                        </Badge>
+                      </div>
+                      <Badge variant="outline" size="sm">
+                        {problem.category}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Main Content */}
@@ -213,15 +320,15 @@ export default function PracticePage() {
                   </TabsList>
 
                   <TabsContent value="description" className="mt-4">
-                    <div className="prose max-w-none">
-                      <p className="text-gray-700 whitespace-pre-line">{selectedProblem.description}</p>
+                    <div className="prose max-w-none dark:prose-invert">
+                      <p className="text-gray-700 dark:text-gray-300">{selectedProblem.description}</p>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="examples" className="mt-4">
                     <div className="space-y-4">
                       {selectedProblem.examples.map((example, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                           <h4 className="font-semibold mb-2">Example {index + 1}:</h4>
                           <div className="space-y-2 text-sm">
                             <div>
@@ -246,7 +353,7 @@ export default function PracticePage() {
                       {selectedProblem.constraints.map((constraint, index) => (
                         <li key={index} className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-700">{constraint}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{constraint}</span>
                         </li>
                       ))}
                     </ul>
@@ -261,26 +368,30 @@ export default function PracticePage() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Code Editor</CardTitle>
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2">
-                      <select
-                        value={selectedLanguage}
-                        onChange={(e) => handleLanguageChange(e.target.value)}
-                        className="px-3 py-2 border rounded-md text-sm bg-white w-32"
-                      >
-                        <option value="python">Python</option>
-                        <option value="cpp">C++</option>
-                        <option value="java">Java</option>
-                      </select>
-                      <Button onClick={resetCode} variant="outline" size="sm">
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Reset
-                      </Button>
-                    </div>
+                    <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="python">Python</SelectItem>
+                        <SelectItem value="cpp">C++</SelectItem>
+                        <SelectItem value="java">Java</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={resetCode} variant="outline" size="sm">
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reset
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <CodeEditor language={selectedLanguage} value={code} onChange={setCode} />
+                <Textarea
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="min-h-[300px] font-mono text-sm"
+                  placeholder="Write your code here..."
+                />
               </CardContent>
             </Card>
 
@@ -348,7 +459,9 @@ export default function PracticePage() {
                       <div
                         key={index}
                         className={`p-3 rounded-lg border ${
-                          result.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                          result.passed
+                            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                            : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
                         }`}
                       >
                         <div className="flex items-center space-x-2 mb-2">
